@@ -77,4 +77,31 @@
 		</manifest>
 	  </jar>
 	</target>
+    <target name="runS" depends="build">
+        <java classname="SummarizedGraph" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="runV" depends="build">
+        <java classname="Velodrome" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="runA" depends="build">
+        <java classname="Aerodrome" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
 </project>
