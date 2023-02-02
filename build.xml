@@ -29,6 +29,7 @@
         <pathelement location="lib/jgrapht/jgraphx-3.4.1.3.jar"/>
         <pathelement location="lib/jgrapht/jheaps-0.9.jar"/>
         <pathelement location="lib/commons-cli-1.3.1.jar"/>
+        <pathelement location="lib/javatuples-1.3-SNAPSHOT.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -119,7 +120,7 @@
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/exp4j/parse.rr" />
+            <arg value="benchmark/exp4j/test.rr" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

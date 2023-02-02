@@ -23,22 +23,17 @@ public class PatternEngine extends Engine<PatternEvent> {
     }
 
     public void generatePattern() {
-        // int cnt = 0;
+        int cnt = 0;
         while (rrParser.checkAndGetNext(handlerEvent)) {
 			// if(handlerEvent.getType().isBegin() && Math.random() < 0.0002) {
                 state.pattern.add(handlerEvent.toHashString());
-            //     if((++cnt) >= 6) {
-            //         break;
-            //     }
+                // if((++cnt) >= 6) {
+                    // break;
+                // }
             // }
 		}
         // Collections.shuffle(state.pattern);
-        System.out.println("patterns:");
-        for(String event: state.pattern) {
-            System.out.println(event);
-        }
-        System.out.println("patterns end");
-        
+        System.out.println(state.pattern);
     }
 
     protected boolean analyzeEvent(PatternEvent handlerEvent, Long eventCount){
@@ -69,7 +64,7 @@ public class PatternEngine extends Engine<PatternEvent> {
 				totalSkippedEvents = totalSkippedEvents + 1;
 			} else {
 				boolean matched = analyzeEvent(handlerEvent, eventCount);
-                if(eventCount % 1000 == 0) {
+                if(eventCount % 10000 == 0) {
                     System.out.println("After analyzing " + eventCount + " events");
                 }
 				if (matched) {
@@ -79,6 +74,7 @@ public class PatternEngine extends Engine<PatternEvent> {
 				postHandleEvent(handlerEvent);
 			}
 		}
+        state.printMemory();
     }
 
     protected void initializeReaderRV(String trace_folder) {

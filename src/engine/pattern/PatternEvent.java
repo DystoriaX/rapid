@@ -1,6 +1,12 @@
 package engine.pattern;
 
+import java.util.Set;
+
 import event.Event;
+import event.Thread;
+import event.Variable;
+
+import org.javatuples.Pair;
 
 public class PatternEvent extends Event {
 
@@ -43,8 +49,21 @@ public class PatternEvent extends Event {
         }
     }
 
+    public boolean isDependent(Pair<Set<Variable>, Set<Thread>> afterSet) {
+        if(afterSet.getValue0().contains(getVariable())) {
+            return true;
+        }
+        if(afterSet.getValue1().contains(getThread())) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean Handle(PatternState state) {
-		return state.updateAndCheck(this);
+        if(this.getType().isAccessType()) {
+		    return state.updateAndCheck(this);
+        }
+        return false;
 	}
     
     @Override
