@@ -104,4 +104,23 @@
             <classpath refid="rapid.classpath" />
         </java>
     </target>
+    <target name="parseRR" depends="build">
+        <java classname="parse/rr/ParseRoadRunner" fork="true">
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="parse" depends="build">
+        <java classname="parse/rr/Parse" fork="true">
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="pattern" depends="build">
+        <java classname="PatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/exp4j/parse.rr" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
 </project>

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -238,13 +239,16 @@ public class ParseRoadRunner {
 		while(!EOF){
 			try {
 				boolean shouldExclude = false;
-				for(String pattern: this.excludedPatterns) {
-					if(line.contains(pattern)) {
-						if(line.contains("Enter(") || line.contains("Exit(")) {
-							shouldExclude = true;
-							break;
-						}
-					}
+				// for(String pattern: this.excludedPatterns) {
+				// 	if(line.contains(pattern)) {
+				// 		if(line.contains("Enter(") || line.contains("Exit(")) {
+				// 			shouldExclude = true;
+				// 			break;
+				// 		}
+				// 	}
+				// }
+				if(!line.startsWith("@")) {
+					shouldExclude = true;
 				}
 				if(!shouldExclude) {
 					parser.getInfo(eInfo, line);
@@ -266,6 +270,41 @@ public class ParseRoadRunner {
 	public int getTotalThreads(){
 		return totThreads;
 	}
+
+	public static void preProcessing(String trace_file, String result_file) {
+		// String excludeFile = "/Users/umang/Repositories/doublechecker-single-run/avd/at_spec/sunflow.txt";
+		Event e = new Event();
+		System.out.println("Start Parsing");
+		ParseRoadRunner parser = new ParseRoadRunner(trace_file);
+		
+		HashMap<Variable, Thread> varToThr = new HashMap<>();
+		HashSet<Variable> concVariables = new HashSet<>();
+		while(parser.checkAndGetNext(e)){
+			if(e.getType().isAccessType()) {
+				if(varToThr.keySet().contains(e.getVariable()) && !varToThr.get(e.getVariable()).equals(e.getThread())) {
+					concVariables.add(e.getVariable());
+				}
+				if(!varToThr.keySet().contains(e.getVariable())) {
+					varToThr.put(e.getVariable(), e.getThread());
+				}
+			}
+		}
+		System.out.println(concVariables.size());
+		parser = new ParseRoadRunner(trace_file);
+		// check whether the result file already exists
+		try {
+			FileWriter myWriter = new FileWriter(result_file);
+			while(parser.checkAndGetNext(e)){
+				if(!e.getType().isAccessType() || concVariables.contains(e.getVariable())) {
+					myWriter.write(parser.line + "\n");
+				}
+			}
+			myWriter.close();
+		} catch (IOException exec) {
+			System.out.println("An error occurred.");
+			exec.printStackTrace();
+		}
+	}
 	
 	public static void demo(){
 		String traceFile = "/Users/umang/Repositories/rapid-internal/traces/atomicity_tests/sunflow.rr";
@@ -281,9 +320,27 @@ public class ParseRoadRunner {
 //		System.out.println(parser.locationToIdMap);
 		
 	}
+
+	public static void demo1(){
+		String traceFile = "/Users/askarzhendongang/Code/rapid/benchmark/exp4j/preproc.rr";
+		// String excludeFile = "/Users/umang/Repositories/doublechecker-single-run/avd/at_spec/sunflow.txt";
+		Event e = new Event();
+		System.out.println("Start Parsing");
+		ParseRoadRunner parser = new ParseRoadRunner(traceFile);
+		try {
+			FileWriter myWriter = new FileWriter("/Users/askarzhendongang/Code/rapid/benchmark/exp4j/parse.rr");
+			while(parser.checkAndGetNext(e)){
+				myWriter.write(e.toFullString());
+			}
+			myWriter.close();
+		} catch (IOException exec) {
+			System.out.println("An error occurred.");
+			exec.printStackTrace();
+		}
+	}
 	
 	public static void main(String args[]){
-		demo();
+		demo1();
 	}
 
 }

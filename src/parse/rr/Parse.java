@@ -29,9 +29,10 @@ public class Parse {
 	}
 
 	public static void example() {
-		String line = "@    ARd(2,null.test/Deadlock.value_I)  Final  Deadlock.java:50:7";
+		// String line = "@    ARd(2,null.test/Deadlock.value_I)  Final  Deadlock.java:50:7";
 //		String line = "@    Acquire(2,@03)";
 //		String line = "@   Exit(1,test/Deadlock.doSomething()V)";
+		String line = "@     AWr(0,@05[13])  Final  Functions.java:116:153";
 		Parse parse = new Parse();
 		EventInfo eInfo = new EventInfo();
 		try{
