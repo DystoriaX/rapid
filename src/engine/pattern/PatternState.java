@@ -16,7 +16,10 @@ public class PatternState {
     private Set<List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>>> currentState = new HashSet<>();
     private Set<List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>>> backupState = new HashSet<>();
     ArrayList<String> pattern = new ArrayList<>();
+    ArrayList<PatternEvent> patternEvents = new ArrayList<>();
     PatternEvent handlerEvent;
+
+    // private Set<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> afterSetPool = new HashSet<>();
 
     public PatternState() {
         currentState.add(new ArrayList<>(Collections.nCopies(3, null)));
@@ -25,19 +28,22 @@ public class PatternState {
     public boolean updateAndCheck(PatternEvent event) {
         handlerEvent = event;
         for(List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> afterSetGroup: currentState) {
-            backupState.add(updateAfterSetGroup(afterSetGroup));
-            if(isNewAfterSet(afterSetGroup)) {
-                int cnt = 0;
-                for(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet: afterSetGroup) {
-                    if(afterSet != null) {
-                        cnt++;
+            updateAfterSetGroup(afterSetGroup);
+            if(isValid(afterSetGroup)) {
+                backupState.add(afterSetGroup);
+                if(isNewAfterSet(afterSetGroup)) {
+                    int cnt = 0;
+                    for(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet: afterSetGroup) {
+                        if(afterSet != null) {
+                            cnt++;
+                        }
                     }
+                    if(cnt == pattern.size() - 1) {
+                        // printCurrentState();
+                        return true;
+                    }
+                    backupState.add(newAfterSetGroup(afterSetGroup));
                 }
-                if(cnt == pattern.size() - 1) {
-                    // printCurrentState();
-                    return true;
-                }
-                backupState.add(newAfterSetGroup(afterSetGroup));
             }
         }
         currentState.clear();
@@ -48,13 +54,12 @@ public class PatternState {
         return false;
     }
 
-    protected List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> updateAfterSetGroup(List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> afterSetGroup) {
+    protected void updateAfterSetGroup(List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> afterSetGroup) {
         for(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet: afterSetGroup) {
             if(afterSet != null && handlerEvent.isDependent(afterSet)) {
                 handlerEvent.updateAfterSet(afterSet);
             }
         }
-        return afterSetGroup;
     }
 
     private boolean patternContains(String sym) {
@@ -69,30 +74,31 @@ public class PatternState {
         if(!patternContains(handlerEvent.toHashString()) || afterSetGroup.get(patternIndexOf(handlerEvent.toHashString())) != null) {
             return false;
         }
-        for(int i = patternIndexOf(handlerEvent.toHashString()) + 1; i < afterSetGroup.size(); i++) {
-            Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet = afterSetGroup.get(i);
-            if(afterSet != null && handlerEvent.isDependent(afterSet)) {
-                return false;
-            }
-        }
+        // for(int i = patternIndexOf(handlerEvent.toHashString()) + 1; i < afterSetGroup.size(); i++) {
+        //     Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet = afterSetGroup.get(i);
+        //     if(afterSet != null && handlerEvent.isDependent(afterSet)) {
+        //         return false;
+        //     }
+        // }
         return true;
     }
 
     protected List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> newAfterSetGroup(List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> afterSetGroup) {
         List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> newAfterSetGroup = new ArrayList<>();
-        Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> newAfterSet = null;
+        // Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> newAfterSet = null;
         for(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet: afterSetGroup) {
-            newAfterSet = null;
-            if(afterSet != null) {
-                newAfterSet = new Quartet<>(new HashSet<Variable>(), new HashSet<Variable>(), new HashSet<Thread>(), new HashSet<Lock>());
-                newAfterSet.getValue0().addAll(afterSet.getValue0());
-                newAfterSet.getValue1().addAll(afterSet.getValue1());
-                newAfterSet.getValue2().addAll(afterSet.getValue2());
-                newAfterSet.getValue3().addAll(afterSet.getValue3());
-            }
-            newAfterSetGroup.add(newAfterSet);
+            // newAfterSet = null;
+            // if(afterSet != null) {
+            //     newAfterSet = new Quartet<>(new HashSet<Variable>(), new HashSet<Variable>(), new HashSet<Thread>(), new HashSet<Lock>());
+            //     newAfterSet.getValue0().addAll(afterSet.getValue0());
+            //     newAfterSet.getValue1().addAll(afterSet.getValue1());
+            //     newAfterSet.getValue2().addAll(afterSet.getValue2());
+            //     newAfterSet.getValue3().addAll(afterSet.getValue3());
+            // }
+            // newAfterSetGroup.add(newAfterSet);
+            newAfterSetGroup.add(afterSet);
         }
-        newAfterSet = new Quartet<>(new HashSet<Variable>(), new HashSet<Variable>(), new HashSet<Thread>(), new HashSet<Lock>());
+        Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> newAfterSet = new Quartet<>(new HashSet<Variable>(), new HashSet<Variable>(), new HashSet<Thread>(), new HashSet<Lock>());
         handlerEvent.updateAfterSet(newAfterSet);
         newAfterSetGroup.set(patternIndexOf(handlerEvent.toHashString()), newAfterSet);
         return newAfterSetGroup;
@@ -106,6 +112,21 @@ public class PatternState {
                 System.out.println(afterSet);
             }
         }
+    }
+
+    private boolean isValid(List<Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>>> afterSetGroup) {
+        for(int i = 0; i < pattern.size() - 1; i++) {
+            if(afterSetGroup.get(i) == null) {
+                PatternEvent event = patternEvents.get(i);
+                for(int j = i + 1; j < pattern.size(); j++) {
+                    Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet = afterSetGroup.get(j);
+                    if(afterSet != null && event.isDependent(afterSet)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     public void printMemory() {
