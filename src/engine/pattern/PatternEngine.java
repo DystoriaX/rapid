@@ -1,7 +1,5 @@
 package engine.pattern;
 
-import java.util.Collections;
-
 import engine.Engine;
 import parse.ParserType;
 import parse.rr.ParseRoadRunner;
@@ -64,9 +62,10 @@ public class PatternEngine extends Engine<PatternEvent> {
 				totalSkippedEvents = totalSkippedEvents + 1;
 			} else {
 				boolean matched = analyzeEvent(handlerEvent, eventCount);
-                if(eventCount % 10000 == 0) {
-                    System.out.println("After analyzing " + eventCount + " events");
-                }
+                // if(eventCount % 100000 == 0) {
+                    // System.out.println("After analyzing " + eventCount + " events");
+                    // state.printMemory();
+                // }
 				if (matched) {
                     System.out.println("Pattern Matched on the first " + eventCount + " events");
                     break;

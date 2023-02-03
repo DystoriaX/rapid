@@ -3,45 +3,26 @@ package engine.pattern;
 import java.util.Set;
 
 import event.Event;
+import event.Lock;
 import event.Thread;
 import event.Variable;
 
-import org.javatuples.Pair;
+import org.javatuples.Quartet;
 
 public class PatternEvent extends Event {
 
-    public PatternSymbol toPatternSymbol() {
-
-        if(this.getType().isAccessType()) {
-            return new PatternSymbol(this.getType(), this.getThread(), this.getVariable());
-        }
-        else if(this.getType().isTransactionType()) {
-            return new PatternSymbol(this.getType(), this.getThread());
-        }
-        else if(this.getType().isLockType()) {
-            return new PatternSymbol(this.getType(), this.getThread(), this.getLock());
-        }
-        else if(this.getType().isExtremeType()) {
-            return new PatternSymbol(this.getType(), this.getThread(), this.getTarget());
-        }
-        else {
-            throw new IllegalArgumentException("Illegal type");
-        }
-        
-    }
-
     public String toHashString() {
-        String basicInfo = this.getType() + "-" + this.getThread();
-        if(this.getType().isAccessType()) {
+        String basicInfo = type + "-" + this.getThread();
+        if(type.isAccessType()) {
             return basicInfo + "-" + this.getVariable();
         }
-        else if(this.getType().isTransactionType()) {
+        else if(type.isTransactionType()) {
             return basicInfo + "-";
         }
-        else if(this.getType().isLockType()) {
+        else if(type.isLockType()) {
             return basicInfo + "-" + this.getLock();
         }
-        else if(this.getType().isExtremeType()) {
+        else if(type.isExtremeType()) {
             return basicInfo + "-" + this.getTarget();
         }
         else {
@@ -49,25 +30,42 @@ public class PatternEvent extends Event {
         }
     }
 
-    public boolean isDependent(Pair<Set<Variable>, Set<Thread>> afterSet) {
-        if(afterSet.getValue0().contains(getVariable())) {
+    public boolean isDependent(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet) {
+        if(afterSet.getValue2().contains(thread)) {
             return true;
         }
-        if(afterSet.getValue1().contains(getThread())) {
-            return true;
+        if(type.isRead()) {
+            return afterSet.getValue1().contains(variable);
+        }
+        else if(type.isWrite()) {
+            return afterSet.getValue0().contains(variable) 
+                || afterSet.getValue1().contains(variable);
+        }
+        else if(type.isLockType()) {
+            afterSet.getValue3().contains(lock);
         }
         return false;
     }
 
+    public void updateAfterSet(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet) {
+        if(type.isRead()) {
+            afterSet.getValue2().add(thread);
+            afterSet.getValue0().add(variable);
+        }
+        else if(type.isWrite()) {
+            afterSet.getValue2().add(thread);
+            afterSet.getValue1().add(variable);
+        }
+        else if(type.isLockType()) {
+            afterSet.getValue2().add(thread);
+            afterSet.getValue3().add(lock);
+        }
+    }
+
     public boolean Handle(PatternState state) {
-        if(this.getType().isAccessType()) {
+        if(type.isAccessType()) {
 		    return state.updateAndCheck(this);
         }
         return false;
 	}
-    
-    @Override
-    public int hashCode() {
-        return (this.getType().toString() + this.getVariable().toString()).hashCode();
-    }
 }
