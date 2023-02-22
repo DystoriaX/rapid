@@ -1,15 +1,8 @@
 package engine.pattern;
 
-import java.util.Set;
-
 import event.Event;
-import event.Lock;
-import event.Thread;
-import event.Variable;
 
-import org.javatuples.Quartet;
-
-public class PatternEvent extends Event {
+public abstract class PatternEvent<S extends State> extends Event {
 
     public String toHashString() {
         String basicInfo = type + "-" + this.getThread();
@@ -30,42 +23,32 @@ public class PatternEvent extends Event {
         }
     }
 
-    public boolean isDependent(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet) {
-        if(afterSet.getValue2().contains(thread)) {
-            return true;
-        }
-        if(type.isRead()) {
-            return afterSet.getValue1().contains(variable);
-        }
-        else if(type.isWrite()) {
-            return afterSet.getValue0().contains(variable) 
-                || afterSet.getValue1().contains(variable);
-        }
-        else if(type.isLockType()) {
-            afterSet.getValue3().contains(lock);
-        }
-        return false;
-    }
-
-    public void updateAfterSet(Quartet<Set<Variable>, Set<Variable>, Set<Thread>, Set<Lock>> afterSet) {
-        if(type.isRead()) {
-            afterSet.getValue2().add(thread);
-            afterSet.getValue0().add(variable);
-        }
-        else if(type.isWrite()) {
-            afterSet.getValue2().add(thread);
-            afterSet.getValue1().add(variable);
-        }
-        else if(type.isLockType()) {
-            afterSet.getValue2().add(thread);
-            afterSet.getValue3().add(lock);
-        }
-    }
-
-    public boolean Handle(PatternState state) {
-        if(type.isAccessType()) {
-		    return state.updateAndCheck(this);
-        }
-        return false;
+	
+	public boolean Handle(S state) {
+		return this.HandleSub(state);
 	}
+	
+	public boolean HandleSub(S state){
+		boolean violationDetected = false;
+
+		if(this.getType().isAcquire()) 	violationDetected = this.HandleSubAcquire(state);
+		if(this.getType().isRelease()) 	violationDetected = this.HandleSubRelease(state);
+		if(this.getType().isRead())		violationDetected = this.HandleSubRead(state);
+		if(this.getType().isWrite())	violationDetected = this.HandleSubWrite(state);
+		if(this.getType().isFork()) 	violationDetected = this.HandleSubFork(state);
+		if(this.getType().isJoin())		violationDetected = this.HandleSubJoin(state);
+		if(this.getType().isBegin())	violationDetected = this.HandleSubBegin(state);
+		if(this.getType().isEnd())		violationDetected = this.HandleSubEnd(state);
+
+		return violationDetected;
+	}
+	
+	public abstract boolean HandleSubAcquire(S state);
+	public abstract boolean HandleSubRelease(S state);
+	public abstract boolean HandleSubRead(S state);
+	public abstract boolean HandleSubWrite(S state);
+	public abstract boolean HandleSubFork(S state);
+	public abstract boolean HandleSubJoin(S state);
+	public abstract boolean HandleSubBegin(S state);
+	public abstract boolean HandleSubEnd(S state);
 }

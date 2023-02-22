@@ -1,43 +1,24 @@
 package engine.pattern;
 
-import java.util.Collections;
+import java.util.HashSet;
 
 import engine.Engine;
+import event.Thread;
 import parse.ParserType;
 import parse.rr.ParseRoadRunner;
 
-public class PatternEngine extends Engine<PatternEvent> {
-
+public class PatternEngine<S extends State, E extends PatternEvent<S>> extends Engine<E> {
     protected long eventCount;
     protected long totalSkippedEvents;
-
-    protected PatternState state;
+    
+    protected HashSet<Thread> threadSet;
+    protected S state;
 
     public PatternEngine(ParserType pType, String trace_folder) {
         super(pType);
-        handlerEvent = new PatternEvent();
-        state = new PatternState();
-        this.initializeReader("benchmark/exp4j/pattern.rr");
-        generatePattern();
-        this.initializeReader(trace_folder);
     }
 
-    public void generatePattern() {
-        int cnt = 0;
-        while (rrParser.checkAndGetNext(handlerEvent)) {
-			// if(handlerEvent.getType().isBegin() && Math.random() < 0.0002) {
-                state.pattern.add(handlerEvent.toHashString());
-                state.patternEvents.add(handlerEvent);
-                // if((++cnt) >= 6) {
-                    // break;
-                // }
-            // }
-		}
-        Collections.shuffle(state.pattern);
-        System.out.println(state.pattern);
-    }
-
-    protected boolean analyzeEvent(PatternEvent handlerEvent, Long eventCount){
+    protected boolean analyzeEvent(E handlerEvent, Long eventCount){
 		boolean patternMatched = false;
 		try{
 			patternMatched = handlerEvent.Handle(state);
@@ -93,14 +74,16 @@ public class PatternEngine extends Engine<PatternEvent> {
 
 	protected void initializeReaderRR(String trace_file) {
         rrParser = new ParseRoadRunner(trace_file, true);
+        threadSet = rrParser.getThreadSet();
     }
 
-    protected boolean skipEvent(PatternEvent handlerEvent) {
+    protected boolean skipEvent(E handlerEvent) {
         // return !handlerEvent.getType().isAccessType();
         return false;
     }
 
-	protected void postHandleEvent(PatternEvent handlerEvent) {
+	protected void postHandleEvent(E handlerEvent) {
 
     }
+
 }

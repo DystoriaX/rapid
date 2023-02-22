@@ -1,11 +1,11 @@
 import cmd.CmdOptions;
 import cmd.GetOptions;
-import engine.pattern.PatternEngine;
+import engine.pattern.vectorclock.VectorClockEngine;
 
 public class PatternProperties {
     public static void main(String[] args) {		
 		CmdOptions options = new GetOptions(args).parse();
-		PatternEngine engine = new PatternEngine(options.parserType, options.path);
+		VectorClockEngine engine = new VectorClockEngine(options.parserType, options.path);
 
 		boolean time_reporting = true;
 		long startTimeAnalysis = 0;
