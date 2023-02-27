@@ -9,7 +9,7 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
     @Override
     public boolean Handle(VectorClockState state) {
         super.Handle(state);
-        return state.extendWitness(this.toHashString(), this.getTimeStamp(state));
+        return state.extendWitness(this.locId, this.thread, this.getTimeStamp(state));
     }
 
     private void incrementCurrentThreadClock(VectorClockState state, VectorClock vc) {

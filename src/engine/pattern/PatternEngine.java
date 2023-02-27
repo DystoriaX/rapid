@@ -1,7 +1,11 @@
 package engine.pattern;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Scanner;
 
 import engine.Engine;
 import event.Thread;
@@ -14,10 +18,25 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
     
     protected HashSet<Thread> threadSet;
     protected HashMap<Integer, String> idToLocationMap;
+    protected HashMap<String, Integer> locationToIdMap;
     protected S state;
 
-    public PatternEngine(ParserType pType, String trace_folder) {
+    protected ArrayList<Integer> pattern = new ArrayList<>();
+
+    public PatternEngine(ParserType pType, String trace_folder, String patternFileName) {
         super(pType);
+        this.initializeReader(trace_folder);
+        try {
+            Scanner myReader = new Scanner(new File(patternFileName));
+            while (myReader.hasNextLine()) {
+              String loc = myReader.nextLine();
+              pattern.add(locationToIdMap.get(loc));
+            }
+            myReader.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
     }
 
     protected boolean analyzeEvent(E handlerEvent, Long eventCount){
@@ -47,11 +66,10 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 			if (skipEvent(handlerEvent)) {
 				totalSkippedEvents = totalSkippedEvents + 1;
 			} else {
-				boolean matched = analyzeEvent(handlerEvent, eventCount);
-                if(eventCount % 10 == 0) {
-                    System.out.println("After analyzing " + eventCount + " events");
-                    state.printMemory();
+                if(eventCount % 1000 == 0) {
+                    System.out.println("Finish " + eventCount);
                 }
+				boolean matched = analyzeEvent(handlerEvent, eventCount);
 				if (matched) {
                     System.out.println("Pattern Matched on the first " + eventCount + " events");
                     break;
@@ -78,6 +96,7 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         rrParser = new ParseRoadRunner(trace_file, true);
         threadSet = rrParser.getThreadSet();
         idToLocationMap = rrParser.idToLocationMap;
+        locationToIdMap = rrParser.locationToIdMap;
     }
 
     protected boolean skipEvent(E handlerEvent) {

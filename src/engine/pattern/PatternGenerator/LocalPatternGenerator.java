@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Random;
 
 import event.Thread;
-import it.unimi.dsi.fastutil.Hash;
 
 public class LocalPatternGenerator extends PatternGenerator {
 

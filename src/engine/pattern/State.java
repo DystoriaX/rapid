@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class State {
 
-    public State(ArrayList<String> pattern) {};
+    public State(ArrayList<Integer> pattern) {};
 
     public State() {};
 

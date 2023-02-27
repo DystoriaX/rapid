@@ -9,9 +9,7 @@ public class BertoniEvent extends PatternEvent<BertoniState> {
     public boolean Handle(BertoniState state) {
         super.Handle(state);
         state.history.get(thread).add(this.getTimeStamp(state));
-        return state.computeNonTerm(this.toHashString(), thread);
-        // return false;
-        // return state.extendWitness(this.toHashString(), this.getTimeStamp(state));
+        return state.computeNonTerm(this.locId, thread);
     }
 
 
