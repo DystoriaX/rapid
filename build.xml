@@ -120,7 +120,7 @@
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/exp4j/parse.rr" />
+            <arg value="benchmark/exp4j/test.rr" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

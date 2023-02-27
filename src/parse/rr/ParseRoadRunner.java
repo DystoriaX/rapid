@@ -29,6 +29,7 @@ public class ParseRoadRunner {
 	
 	private int locIdIndex;
 	public HashMap<String, Integer> locationToIdMap;
+	public HashMap<Integer, String> idToLocationMap;
 	public HashSet<String> excludedPatterns;
 	
 	public ParseRoadRunner(String traceFile){
@@ -40,6 +41,7 @@ public class ParseRoadRunner {
 		
 		locIdIndex = 0;
 		locationToIdMap = new HashMap<String, Integer> ();
+		idToLocationMap = new HashMap<>();
 
 		bufferedReader = null;
 		try{
@@ -125,6 +127,7 @@ public class ParseRoadRunner {
 		
 		if(!locationToIdMap.containsKey(eInfo.locId)){
 			locationToIdMap.put(eInfo.locId, locIdIndex);
+			idToLocationMap.put(locIdIndex, eInfo.locId);
 			locIdIndex = locIdIndex + 1;
 		}
 		int LID = locationToIdMap.get(eInfo.locId); 

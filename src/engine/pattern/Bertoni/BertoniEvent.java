@@ -1,23 +1,26 @@
-package engine.pattern.Vectorclock;
+package engine.pattern.Bertoni;
 
 import engine.pattern.PatternEvent;
 import util.vectorclock.VectorClock;
 
+public class BertoniEvent extends PatternEvent<BertoniState> {
 
-public class VectorClockEvent extends PatternEvent<VectorClockState> {
-    
     @Override
-    public boolean Handle(VectorClockState state) {
+    public boolean Handle(BertoniState state) {
         super.Handle(state);
-        return state.extendWitness(this.toHashString(), this.getTimeStamp(state));
+        state.history.get(thread).add(this.getTimeStamp(state));
+        return state.computeNonTerm(this.toHashString(), thread);
+        // return false;
+        // return state.extendWitness(this.toHashString(), this.getTimeStamp(state));
     }
 
-    private void incrementCurrentThreadClock(VectorClockState state, VectorClock vc) {
+
+    private void incrementCurrentThreadClock(BertoniState state, VectorClock vc) {
         int threadId = state.getThreadIndex(thread);
         vc.setClockIndex(threadId, vc.getClockIndex(threadId) + 1);
     }
 
-    public boolean HandleSubAcquire(VectorClockState state) {
+    public boolean HandleSubAcquire(BertoniState state) {
         VectorClock L_l = state.getLockClock(lock);
         VectorClock C_t = state.getThreadClock(thread);
         C_t.updateWithMax(C_t, L_l);
@@ -25,7 +28,7 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
         return false;
     }
 
-	public boolean HandleSubRelease(VectorClockState state) {
+	public boolean HandleSubRelease(BertoniState state) {
         VectorClock L_l = state.getLockClock(lock);
         VectorClock C_t = state.getThreadClock(thread);
         incrementCurrentThreadClock(state, C_t);
@@ -33,7 +36,7 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
         return false;
     }
 
-	public boolean HandleSubRead(VectorClockState state) {
+	public boolean HandleSubRead(BertoniState state) {
         VectorClock C_t = state.getThreadClock(thread);
         VectorClock W_x = state.getWriteClock(variable);
         VectorClock R_x = state.getReadClock(variable);
@@ -43,7 +46,7 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
         return false;
     }
 
-	public boolean HandleSubWrite(VectorClockState state) {
+	public boolean HandleSubWrite(BertoniState state) {
         VectorClock C_t = state.getThreadClock(thread);
         VectorClock W_x = state.getWriteClock(variable);
         VectorClock R_x = state.getReadClock(variable);
@@ -53,7 +56,7 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
         return false;
     }
 
-	public boolean HandleSubFork(VectorClockState state) {
+	public boolean HandleSubFork(BertoniState state) {
         VectorClock C_t = state.getThreadClock(thread);
         VectorClock C_u = state.getThreadClock(target);
         C_u.copyFrom(C_t);
@@ -61,26 +64,25 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
         return false;
     }
 
-	public boolean HandleSubJoin(VectorClockState state) {
+	public boolean HandleSubJoin(BertoniState state) {
         VectorClock C_t = state.getThreadClock(thread);
         VectorClock C_u = state.getThreadClock(target);
         C_t.updateWithMax(C_t, C_u);
+        incrementCurrentThreadClock(state, C_t);
         return false;
     }
 
-	public boolean HandleSubBegin(VectorClockState state) {
+	public boolean HandleSubBegin(BertoniState state) {
         incrementCurrentThreadClock(state, state.getThreadClock(thread));
         return false;
     }
 
-	public boolean HandleSubEnd(VectorClockState state) {
+	public boolean HandleSubEnd(BertoniState state) {
         incrementCurrentThreadClock(state, state.getThreadClock(thread));
         return false;
     }
 
-    private VectorClock getTimeStamp(VectorClockState state) {
+    private VectorClock getTimeStamp(BertoniState state) {
         return new VectorClock(state.getThreadClock(thread));
     }
 }
-
-

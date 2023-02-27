@@ -1,5 +1,6 @@
 package engine.pattern;
 
+import java.util.HashMap;
 import java.util.HashSet;
 
 import engine.Engine;
@@ -12,6 +13,7 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
     protected long totalSkippedEvents;
     
     protected HashSet<Thread> threadSet;
+    protected HashMap<Integer, String> idToLocationMap;
     protected S state;
 
     public PatternEngine(ParserType pType, String trace_folder) {
@@ -46,9 +48,9 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 				totalSkippedEvents = totalSkippedEvents + 1;
 			} else {
 				boolean matched = analyzeEvent(handlerEvent, eventCount);
-                if(eventCount % 100000 == 0) {
+                if(eventCount % 10 == 0) {
                     System.out.println("After analyzing " + eventCount + " events");
-                    // state.printMemory();
+                    state.printMemory();
                 }
 				if (matched) {
                     System.out.println("Pattern Matched on the first " + eventCount + " events");
@@ -75,6 +77,7 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 	protected void initializeReaderRR(String trace_file) {
         rrParser = new ParseRoadRunner(trace_file, true);
         threadSet = rrParser.getThreadSet();
+        idToLocationMap = rrParser.idToLocationMap;
     }
 
     protected boolean skipEvent(E handlerEvent) {

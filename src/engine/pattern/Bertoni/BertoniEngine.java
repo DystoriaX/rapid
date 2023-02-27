@@ -1,21 +1,20 @@
-package engine.pattern.Vectorclock;
+package engine.pattern.Bertoni;
 
 import java.util.ArrayList;
 
 import engine.pattern.PatternEngine;
 import parse.ParserType;
 
-public class VectorClockEngine extends PatternEngine<VectorClockState, VectorClockEvent> {
-
+public class BertoniEngine extends PatternEngine<BertoniState, BertoniEvent> {
     ArrayList<String> pattern = new ArrayList<>();
 
-    public VectorClockEngine(ParserType pType, String trace_folder) {
+    public BertoniEngine(ParserType pType, String trace_folder) {
         super(pType, trace_folder);
-        handlerEvent = new VectorClockEvent();
-        this.initializeReader("benchmark/exp4j/patternshort.rr");
+        handlerEvent = new BertoniEvent();
+        this.initializeReader("benchmark/exp4j/pattern.rr");
         generatePattern();
         this.initializeReader(trace_folder);
-        state = new VectorClockState(threadSet, pattern);
+        state = new BertoniState(threadSet, pattern);
     }
 
     public void generatePattern() {
@@ -31,7 +30,4 @@ public class VectorClockEngine extends PatternEngine<VectorClockState, VectorClo
         // Collections.shuffle(pattern);
         System.out.println(pattern);
     }
-
-   
-    
 }
