@@ -116,11 +116,44 @@
         </java>
     </target>
     <target name="pattern" depends="build">
-        <java classname="PatternProperties" fork="true">
+        <java classname="VCPatternProperties" fork="true">
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/exp4j/test.rr" />
+            <arg value="benchmark/patternTest/parse1.rr" />
+            <arg value="-m" />
+            <arg value="benchmark/patternTest/patternshort.rr" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="concurtest" depends="build">
+        <java classname="VCPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/logstash/TEST_net_logstash_logback_composite_FastISOTimestampFormatterTest_threadSafety/TEST_net_logstash_logback_composite_FastISOTimestampFormatterTest_threadSafety.rr" />
+            <arg value="-m" />
+            <arg value="benchmark/logstash/TEST_net_logstash_logback_composite_FastISOTimestampFormatterTest_threadSafety/pattern4" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="metainfo" depends="build">
+        <java classname="MetaPatternInfo" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/TEST_net_objecthunter_exp4j_ConcurrentTest.rr" />
+            <arg value="-m" />
+            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/pattern" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="generatePattern" depends="build">
+        <java classname="PatternGeneration" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/zookeeper/TEST_single/test1.rr" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

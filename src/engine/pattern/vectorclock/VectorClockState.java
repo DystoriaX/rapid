@@ -116,7 +116,7 @@ public class VectorClockState extends State {
     }
 
     public void printMemory() {
-        System.out.println(currentState);
+        // System.out.println(currentState);
     }
 }
 

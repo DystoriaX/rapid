@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 public class GlobalPatternGenerator extends PatternGenerator {
 
-    public GlobalPatternGenerator(int k, String sourceFile, String patternFile, int number) {
-        super(k, sourceFile, patternFile, number);
+    public GlobalPatternGenerator(String sourceFile, String patternFile, int number) {
+        super(sourceFile, patternFile, number);
     }
 
     @Override

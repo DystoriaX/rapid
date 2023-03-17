@@ -61,22 +61,24 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
     }
 
     private void analyzeTraceRR() {
+        boolean flag = false;
         while (rrParser.checkAndGetNext(handlerEvent)) {
 			eventCount = eventCount + 1;
 			if (skipEvent(handlerEvent)) {
 				totalSkippedEvents = totalSkippedEvents + 1;
 			} else {
-                if(eventCount % 1000 == 0) {
-                    System.out.println("Finish " + eventCount);
-                }
 				boolean matched = analyzeEvent(handlerEvent, eventCount);
 				if (matched) {
+                    flag = true;
                     System.out.println("Pattern Matched on the first " + eventCount + " events");
                     break;
 				}
 				postHandleEvent(handlerEvent);
 			}
 		}
+        if(!flag) {
+            System.out.println("Not matched");
+        }
         state.printMemory();
     }
 

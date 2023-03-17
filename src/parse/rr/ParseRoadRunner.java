@@ -21,11 +21,12 @@ public class ParseRoadRunner {
 	private HashMap<String, Variable> variableMap;
 	
 	int totThreads;
-	BufferedReader bufferedReader;
+	public BufferedReader bufferedReader;
 	String line;
 	Parse parser;
 	EventInfo eInfo;
-	long totEvents;
+	public long totEvents;
+	public long tot;
 	
 	private int locIdIndex;
 	public HashMap<String, Integer> locationToIdMap;
@@ -92,6 +93,7 @@ public class ParseRoadRunner {
 		if(computeThreadSetAPriori){
 			Event e = new Event ();
 			while(this.checkAndGetNext(e)){} //Read this trace to calculate threadSet
+			this.tot = totEvents;
 			this.totEvents = 0; //Resetting totEvents is required to ensure correct AuxId
 			try{
 				bufferedReader = new BufferedReader(new FileReader(traceFile));
@@ -222,6 +224,7 @@ public class ParseRoadRunner {
 		try {
 			line = bufferedReader.readLine() ;
 		} catch (IOException ex) {
+			ex.printStackTrace();
 			System.err.println("Error reading buffered reader");
 		}
 

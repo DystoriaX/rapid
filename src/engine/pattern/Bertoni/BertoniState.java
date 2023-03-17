@@ -26,7 +26,7 @@ public class BertoniState extends State {
     private HashMap<Lock, VectorClock> lockClock = new HashMap<>();
 
     public HashMap<Thread, ArrayList<VectorClock>> history = new HashMap<>();
-    public HashMap<Vector<Integer>, HashSet<Integer>> idealToNonTerm = new HashMap<>();
+    public HashMap<Vector<Integer>, Integer> idealToNonTerm = new HashMap<>();
     public HashMap<Integer, HashMap<Integer, Integer>> specialSym = new HashMap<>();
 
     private HashSet<ArrayList<Thread>> combinations = new HashSet<>();
@@ -45,9 +45,8 @@ public class BertoniState extends State {
             specialSym.put(index, new HashMap<>());
             index++;
         }
-        // HashSet<Integer> initialSym = new HashSet<>();
-        // initialSym.add(0);
-        // idealToNonTerm.put(emptyClock().getClock(), initialSym);
+        
+        idealToNonTerm.put(emptyClock().getClock(), -1);
 
         Iterator<Integer> it = pattern.iterator();
         int cnt = 0;
@@ -115,29 +114,35 @@ public class BertoniState extends State {
         ArrayList<Ideal> ideals = generateIdeals(threadClock.get(thread), thread);
         Collections.sort(ideals);
         idealsNum = ideals.size();
+
+        // System.out.println(ideals);
         for(Ideal ideal: ideals) {
-            HashSet<Integer> nonterm = zeroSet();
+            int nonterm = -1;
             for(int thr: ideal.maximalThreads) {
+                // System.out.println(ideal + " " + thr);
                 Vector<Integer> clock = new Vector<>(ideal.clock);
                 clock.set(thr, clock.get(thr) - 1);
-                if(idealToNonTerm.containsKey(clock)) {
-                    nonterm.addAll(idealToNonTerm.get(clock));
+                if(idealToNonTerm.containsKey(clock) && nonterm < idealToNonTerm.get(clock)) {
+                    nonterm = idealToNonTerm.get(clock);
                 }
                 if(specialSym.get(thr).containsKey(ideal.clock.get(thr))) {
                     int sym = specialSym.get(thr).get(ideal.clock.get(thr));
-                    if(sym == 0 || (idealToNonTerm.containsKey(clock) && 
-                            idealToNonTerm.get(clock).contains(sym))) {
+                    // System.out.println(sym);
+                    if(sym == 0 || (idealToNonTerm.containsKey(clock) && idealToNonTerm.get(clock) == sym - 1)) {
                         if(sym == pattern.size() - 1) {
                             return true;
                         }
-                        nonterm.add(sym + 1);
+                        if(nonterm < sym) {
+                            nonterm = sym;
+                        }
                     }
                 }
             }
-            if(nonterm.size() > 1) {
+            if(nonterm >= 0) {
                 idealToNonTerm.put(ideal.clock, nonterm);
             }
         }
+        // System.out.println(idealToNonTerm);
         return false;
     }
 
@@ -158,7 +163,7 @@ public class BertoniState extends State {
     private void generateIdeal(ArrayList<Thread> combination, int index, HashSet<Ideal> ideals, HashMap<Integer, VectorClock> vcs, Thread thread) {
         if(index == combination.size()) {
             VectorClock vc = new VectorClock(numThreads);
-            vc.updateWithMax(vcs.values().toArray(VectorClock[]::new));
+            vc.updateWithMax(vcs.values().toArray(new VectorClock[0]));
             ideals.add(new Ideal(vc.getClock(), getMaximalThreads(vcs)));
         }
         else {
@@ -192,7 +197,7 @@ public class BertoniState extends State {
     }
 
     public void printMemory() {
-        System.out.println(idealsNum);
+        // System.out.println(idealsNum);
     }
 }
 
