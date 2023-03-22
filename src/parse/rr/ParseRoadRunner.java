@@ -328,20 +328,13 @@ public class ParseRoadRunner {
 	}
 
 	public static void demo1(){
-		String traceFile = "/Users/askarzhendongang/Code/rapid/benchmark/exp4j/preproc.rr";
+		String traceFile = "/Users/askarzhendongang/Code/rapid/benchmark/patternTest/parse1.rr";
 		// String excludeFile = "/Users/umang/Repositories/doublechecker-single-run/avd/at_spec/sunflow.txt";
 		Event e = new Event();
 		System.out.println("Start Parsing");
 		ParseRoadRunner parser = new ParseRoadRunner(traceFile);
-		try {
-			FileWriter myWriter = new FileWriter("/Users/askarzhendongang/Code/rapid/benchmark/exp4j/parse.rr");
-			while(parser.checkAndGetNext(e)){
-				myWriter.write(e.toFullString());
-			}
-			myWriter.close();
-		} catch (IOException exec) {
-			System.out.println("An error occurred.");
-			exec.printStackTrace();
+		while(parser.checkAndGetNext(e)){
+			System.out.println(e.toCompactString());
 		}
 	}
 	

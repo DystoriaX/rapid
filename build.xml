@@ -116,24 +116,24 @@
         </java>
     </target>
     <target name="pattern" depends="build">
-        <java classname="VCPatternProperties" fork="true">
+        <java classname="BertoniPatternProperties" fork="true">
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/patternTest/parse1.rr" />
+            <arg value="benchmark/patternTest/parse2.rr" />
             <arg value="-m" />
             <arg value="benchmark/patternTest/patternshort.rr" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>
     <target name="concurtest" depends="build">
-        <java classname="VCPatternProperties" fork="true">
+        <java classname="BertoniPatternProperties" fork="true">
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/logstash/TEST_net_logstash_logback_composite_FastISOTimestampFormatterTest_threadSafety/TEST_net_logstash_logback_composite_FastISOTimestampFormatterTest_threadSafety.rr" />
+            <arg value="benchmark/logstash/TEST_net_logstash_logback_util_ThreadLocalHolderTest_testThreadValues_expectsAtMaximumOneValuePerThreadInThreadValues/TEST_net_logstash_logback_util_ThreadLocalHolderTest_testThreadValues_expectsAtMaximumOneValuePerThreadInThreadValues.rr" />
             <arg value="-m" />
-            <arg value="benchmark/logstash/TEST_net_logstash_logback_composite_FastISOTimestampFormatterTest_threadSafety/pattern4" />
+            <arg value="benchmark/logstash/TEST_net_logstash_logback_util_ThreadLocalHolderTest_testThreadValues_expectsAtMaximumOneValuePerThreadInThreadValues/pattern/pattern1" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

@@ -59,7 +59,6 @@ public class BertoniEvent extends PatternEvent<BertoniState> {
         VectorClock C_u = state.getThreadClock(target);
         incrementCurrentThreadClock(state, C_t);
         C_u.copyFrom(C_t);
-        C_u.setClockIndex(state.getThreadIndex(target), 1);
         return false;
     }
 

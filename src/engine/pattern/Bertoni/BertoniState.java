@@ -2,10 +2,11 @@ package engine.pattern.Bertoni;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import engine.pattern.State;
@@ -16,9 +17,10 @@ import util.vectorclock.VectorClock;
 
 public class BertoniState extends State {
     private HashMap<Thread, Integer> threadToIndex = new HashMap<>();
-    public HashMap<Integer, Integer> pattern = new HashMap<>();
+    public HashMap<Integer, HashSet<Integer>> pattern = new HashMap<>();
 
     private int numThreads;
+    private int k;
 
     private HashMap<Thread, VectorClock> threadClock = new HashMap<>();
     private HashMap<Variable, VectorClock> readClock = new HashMap<>();
@@ -26,12 +28,11 @@ public class BertoniState extends State {
     private HashMap<Lock, VectorClock> lockClock = new HashMap<>();
 
     public HashMap<Thread, ArrayList<VectorClock>> history = new HashMap<>();
-    public HashMap<Vector<Integer>, Integer> idealToNonTerm = new HashMap<>();
+    public TreeMap<TotalOrderVectorClock, Integer> idealToNonTerm = new TreeMap<>();
     public HashMap<Integer, HashMap<Integer, Integer>> specialSym = new HashMap<>();
+    public TreeSet<Ideal> ideals = new TreeSet<>();
 
     private HashSet<ArrayList<Thread>> combinations = new HashSet<>();
-
-    private int idealsNum = 0;
 
     public BertoniState(HashSet<Thread> tSet, ArrayList<Integer> pattern) {
         numThreads = tSet.size();
@@ -46,13 +47,16 @@ public class BertoniState extends State {
             index++;
         }
         
-        idealToNonTerm.put(emptyClock().getClock(), -1);
+        idealToNonTerm.put(new TotalOrderVectorClock(emptyClock().getClock()), -1);
 
-        Iterator<Integer> it = pattern.iterator();
         int cnt = 0;
-        while (it.hasNext()) {
-            this.pattern.put(it.next(), cnt++);
+        for(int p : pattern) {
+            if(!this.pattern.containsKey(p)) {
+                this.pattern.put(p, new HashSet<Integer>());
+            }
+            this.pattern.get(p).add(cnt++);
         }
+        this.k = pattern.size();
         generateCombinations(new ArrayList<Thread>(), new ArrayList<Thread>(tSet), 0);
     }
 
@@ -67,12 +71,6 @@ public class BertoniState extends State {
 
     public VectorClock emptyClock() {
         return new VectorClock(numThreads);
-    }
-
-    private HashSet<Integer> zeroSet() {
-        HashSet<Integer> initialSym = new HashSet<>();
-        initialSym.add(0);
-        return initialSym;
     }
 
     public VectorClock getThreadClock(Thread t) {
@@ -109,68 +107,75 @@ public class BertoniState extends State {
             specialSym.get(threadToIndex.get(thread)).
                     put(threadClock.get(thread).
                             getClockIndex(threadToIndex.get(thread)), 
-                        pattern.get(locId));
+                        locId);
         }
-        ArrayList<Ideal> ideals = generateIdeals(threadClock.get(thread), thread);
-        Collections.sort(ideals);
-        idealsNum = ideals.size();
+        ideals = generateIdeals(threadClock.get(thread), thread);
 
-        // System.out.println(ideals);
+        
         for(Ideal ideal: ideals) {
             int nonterm = -1;
             for(int thr: ideal.maximalThreads) {
-                // System.out.println(ideal + " " + thr);
-                Vector<Integer> clock = new Vector<>(ideal.clock);
+                Vector<Integer> clock = new Vector<>(ideal.getClock());
                 clock.set(thr, clock.get(thr) - 1);
-                if(idealToNonTerm.containsKey(clock) && nonterm < idealToNonTerm.get(clock)) {
-                    nonterm = idealToNonTerm.get(clock);
+                TotalOrderVectorClock vc = new TotalOrderVectorClock(clock);
+                if(!idealToNonTerm.containsKey(vc)) {
+                    System.out.println(ideals.size());
+                    System.out.println(vc);
+                    System.out.println(idealToNonTerm.size());
+                    throw new IllegalArgumentException("Wrong Implementation! Earlier ideals should have been computed!");
                 }
-                if(specialSym.get(thr).containsKey(ideal.clock.get(thr))) {
-                    int sym = specialSym.get(thr).get(ideal.clock.get(thr));
-                    // System.out.println(sym);
-                    if(sym == 0 || (idealToNonTerm.containsKey(clock) && idealToNonTerm.get(clock) == sym - 1)) {
-                        if(sym == pattern.size() - 1) {
-                            return true;
-                        }
-                        if(nonterm < sym) {
-                            nonterm = sym;
+                if(nonterm < idealToNonTerm.get(vc)) {
+                    nonterm = idealToNonTerm.get(vc);
+                }
+                if(specialSym.get(thr).containsKey(ideal.getClock().get(thr))) {
+                    int loc = specialSym.get(thr).get(ideal.getClock().get(thr));
+                    for(int sym : pattern.get(loc)) {
+                        if(sym == 0 || (idealToNonTerm.get(vc) == sym - 1)) {
+                            if(sym == k - 1) {
+                                return true;
+                            }
+                            if(nonterm < sym) {
+                                nonterm = sym;
+                            }
                         }
                     }
                 }
             }
-            if(nonterm >= 0) {
-                idealToNonTerm.put(ideal.clock, nonterm);
+            if(nonterm >= -1) {
+                idealToNonTerm.put(ideal.totclock, nonterm);
             }
         }
-        // System.out.println(idealToNonTerm);
         return false;
     }
 
-    private ArrayList<Ideal> generateIdeals(VectorClock vc, Thread thread) {
-        HashSet<Ideal> ideals = new HashSet<>();
-        ideals.add(new Ideal(new Vector<>(vc.getClock()), new HashSet<Integer>(Arrays.asList(threadToIndex.get(thread)))));
+    private TreeSet<Ideal> generateIdeals(VectorClock vc, Thread thread) {
+        ideals = new TreeSet<>();
+        ideals.add(new Ideal(new TotalOrderVectorClock(vc.getClock()), new HashSet<Integer>(Arrays.asList(threadToIndex.get(thread)))));
         for(ArrayList<Thread> combination: combinations) {
             if(combination.contains(thread)) {
                 continue;
             }
             HashMap<Integer, VectorClock> vcs = new HashMap<>();
             vcs.put(threadToIndex.get(thread), vc);
-            generateIdeal(combination, 0, ideals, vcs, thread);
+            generateIdeal(combination, 0, vcs, thread);
         }
-        return new ArrayList<Ideal>(ideals);
+        return ideals;
     }
 
-    private void generateIdeal(ArrayList<Thread> combination, int index, HashSet<Ideal> ideals, HashMap<Integer, VectorClock> vcs, Thread thread) {
+    private void generateIdeal(ArrayList<Thread> combination, int index, HashMap<Integer, VectorClock> vcs, Thread thread) {
         if(index == combination.size()) {
             VectorClock vc = new VectorClock(numThreads);
             vc.updateWithMax(vcs.values().toArray(new VectorClock[0]));
-            ideals.add(new Ideal(vc.getClock(), getMaximalThreads(vcs)));
+            HashSet<Integer> maxThreads = getMaximalThreads(vcs);
+            if(maxThreads.size() == combination.size() + 1) {
+                ideals.add(new Ideal(new TotalOrderVectorClock(vc.getClock()), maxThreads));
+            }
         }
         else {
             Thread thr = combination.get(index);
             for(int i = vcs.get(threadToIndex.get(thread)).getClockIndex(threadToIndex.get(thr)); i < history.get(thr).size(); i++) {
                 vcs.put(threadToIndex.get(thr), history.get(thr).get(i));
-                generateIdeal(combination, index + 1, ideals, vcs, thread);
+                generateIdeal(combination, index + 1, vcs, thread);
                 vcs.remove(threadToIndex.get(thr));
             }
         }
@@ -197,46 +202,72 @@ public class BertoniState extends State {
     }
 
     public void printMemory() {
-        // System.out.println(idealsNum);
+        System.out.println(idealToNonTerm.keySet().size());
+        System.out.println(ideals.size());
+    }
+}
+
+class TotalOrderVectorClock implements Comparable<TotalOrderVectorClock> {
+
+    public Vector<Integer> clock;
+    public int dim;
+    public int sum;
+
+    public TotalOrderVectorClock(Vector<Integer> vc) {
+        clock = new Vector<>(vc);
+        dim = clock.size();
+        sum = 0;
+        for(int i: clock) {
+            sum += i;
+        }
+    }
+
+    @Override
+	public int compareTo(TotalOrderVectorClock other) {
+        if (!(this.dim == other.dim)) {
+			throw new IllegalArgumentException("Mismatch in this.dim and argument.dim");
+		}
+        int sumDiff = this.sum - other.sum;
+		if (sumDiff == 0) {
+			for(int i = 0; i < this.clock.size(); i++) {
+                int diff = this.clock.get(i) - other.clock.get(i);
+                if(diff != 0) {
+                    return diff;
+                }
+            }
+            return 0;
+		} else {
+            return sumDiff;
+        }
+	}
+
+    @Override
+    public String toString() {
+        return clock.toString() + " " + sum;
     }
 }
 
 class Ideal implements Comparable<Ideal> {
 
-    public Vector<Integer> clock;
+    public TotalOrderVectorClock totclock;
     public HashSet<Integer> maximalThreads;
 
-    public Ideal(Vector<Integer> vc, HashSet<Integer> mt) {
-        clock = vc;
+    public Ideal(TotalOrderVectorClock vc, HashSet<Integer> mt) {
+        totclock = vc;
         maximalThreads = mt;
     }
 
-    public int sum() {
-        return clock.stream().reduce(0, Integer::sum);
+    public Vector<Integer> getClock() {
+        return totclock.clock;
     }
 
     @Override
-    public int hashCode() {
-        return clock.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this.hashCode() == o.hashCode();
-    }
-
-    @Override
-	public int compareTo(Ideal ideal) {
-		if (this.sum() == ideal.sum()) {
-			return 0;
-		} else if (this.sum() < ideal.sum()) {
-			return -1;
-		} else
-			return 1;
+	public int compareTo(Ideal other) {
+        return this.totclock.compareTo(other.totclock);
 	}
 
     @Override
     public String toString() {
-        return clock.toString() + ", " + maximalThreads.toString();
+        return totclock.toString() + ", " + maximalThreads.toString();
     }
 }

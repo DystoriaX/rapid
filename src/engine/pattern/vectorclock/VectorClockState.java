@@ -16,9 +16,10 @@ import util.vectorclock.VectorClock;
 public class VectorClockState extends State {
     private HashMap<Thread, Integer> threadToIndex = new HashMap<>();
     public HashMap<ArrayList<Pair<Thread, Integer>> , ArrayList<VectorClock>> currentState = new HashMap<>();
-    public HashMap<Integer, Integer> pattern = new HashMap<>();
+    public HashMap<Integer, HashSet<Integer>> pattern = new HashMap<>();
 
     private int numThreads;
+    private int k;
 
     private HashMap<Thread, VectorClock> threadClock = new HashMap<>();
     private HashMap<Variable, VectorClock> readClock = new HashMap<>();
@@ -36,11 +37,14 @@ public class VectorClockState extends State {
             threadClock.put(thr, emptyClock());
         }
         currentState.put(new ArrayList<>(), new ArrayList<>());
-        Iterator<Integer> it = pattern.iterator();
         int cnt = 0;
-        while (it.hasNext()) {
-            this.pattern.put(it.next(), cnt++);
+        for(int p : pattern) {
+            if(!this.pattern.containsKey(p)) {
+                this.pattern.put(p, new HashSet<Integer>());
+            }
+            this.pattern.get(p).add(cnt++);
         }
+        this.k = pattern.size();
     }
 
     public VectorClock emptyClock() {
@@ -79,18 +83,20 @@ public class VectorClockState extends State {
     public boolean extendWitness(int locId, Thread thread, VectorClock vc) {
         if(pattern.containsKey(locId)) {
             HashMap<ArrayList<Pair<Thread, Integer>> , ArrayList<VectorClock>> newStates = new HashMap<>();
-            for(ArrayList<Pair<Thread, Integer>> witness: currentState.keySet()) {
-                if(witnesses(locId, vc, witness, currentState.get(witness))) {
-                    if(witness.size() == pattern.keySet().size() - 1) {
-                        return true;
+            for (int index : pattern.get(locId)) {
+                for(ArrayList<Pair<Thread, Integer>> witness: currentState.keySet()) {
+                    if(witnesses(index, vc, witness, currentState.get(witness))) {
+                        if(witness.size() == k - 1) {
+                            return true;
+                        }
+                        ArrayList<Pair<Thread, Integer>> extendedWitness = new ArrayList<>();
+                        extendedWitness.addAll(witness);
+                        extendedWitness.add(new Pair<Thread, Integer>(thread, index));
+                        ArrayList<VectorClock> extendedTimeStamps = new ArrayList<>();
+                        extendedTimeStamps.addAll(currentState.get(witness));
+                        extendedTimeStamps.add(vc);
+                        newStates.put(extendedWitness, extendedTimeStamps);
                     }
-                    ArrayList<Pair<Thread, Integer>> extendedWitness = new ArrayList<>();
-                    extendedWitness.addAll(witness);
-                    extendedWitness.add(new Pair<Thread, Integer>(thread, locId));
-                    ArrayList<VectorClock> extendedTimeStamps = new ArrayList<>();
-                    extendedTimeStamps.addAll(currentState.get(witness));
-                    extendedTimeStamps.add(vc);
-                    newStates.put(extendedWitness, extendedTimeStamps);
                 }
             }
             currentState.putAll(newStates);
@@ -98,16 +104,16 @@ public class VectorClockState extends State {
         return false;
     }
 
-    private boolean witnesses(int locId, VectorClock vc, ArrayList<Pair<Thread, Integer>> witness, ArrayList<VectorClock> timestamps) {
+    private boolean witnesses(int index, VectorClock vc, ArrayList<Pair<Thread, Integer>> witness, ArrayList<VectorClock> timestamps) {
         Iterator<Pair<Thread, Integer>> itWitness = witness.iterator();
         Iterator<VectorClock> itTimestamp = timestamps.iterator();
         while(itWitness.hasNext()) {
             Pair<Thread, Integer> event2 = itWitness.next();
-            if(event2.getValue1() == locId) {
+            if(event2.getValue1() == index) {
                 return false;
             }
             VectorClock timeStamp = itTimestamp.next();
-            if(pattern.get(event2.getValue1()) > pattern.get(locId) &&
+            if(event2.getValue1() > index &&
                 timeStamp.isLessThanOrEqual(vc)) {
                     return false;
                 }
@@ -116,7 +122,7 @@ public class VectorClockState extends State {
     }
 
     public void printMemory() {
-        // System.out.println(currentState);
+        // System.out.println(currentState.keySet());
     }
 }
 

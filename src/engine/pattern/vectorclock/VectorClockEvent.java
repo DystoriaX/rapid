@@ -56,6 +56,7 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
 	public boolean HandleSubFork(VectorClockState state) {
         VectorClock C_t = state.getThreadClock(thread);
         VectorClock C_u = state.getThreadClock(target);
+        incrementCurrentThreadClock(state, C_t);
         C_u.copyFrom(C_t);
         C_u.setClockIndex(state.getThreadIndex(target), 1);
         return false;
@@ -65,6 +66,7 @@ public class VectorClockEvent extends PatternEvent<VectorClockState> {
         VectorClock C_t = state.getThreadClock(thread);
         VectorClock C_u = state.getThreadClock(target);
         C_t.updateWithMax(C_t, C_u);
+        incrementCurrentThreadClock(state, C_t);
         return false;
     }
 

@@ -37,6 +37,8 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
             System.out.println("An error occurred.");
             e.printStackTrace();
         }
+        eventCount = 0;
+        totalSkippedEvents = 0;
     }
 
     protected boolean analyzeEvent(E handlerEvent, Long eventCount){
@@ -45,9 +47,9 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 			patternMatched = handlerEvent.Handle(state);
 		}
 		catch(OutOfMemoryError oome){
-			oome.printStackTrace();
 			System.err.println("Number of events = " + Long.toString(eventCount));
 			state.printMemory();
+            oome.printStackTrace();
 		}
 		return patternMatched;
 	}
@@ -64,17 +66,15 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         boolean flag = false;
         while (rrParser.checkAndGetNext(handlerEvent)) {
 			eventCount = eventCount + 1;
-			if (skipEvent(handlerEvent)) {
-				totalSkippedEvents = totalSkippedEvents + 1;
-			} else {
-				boolean matched = analyzeEvent(handlerEvent, eventCount);
-				if (matched) {
-                    flag = true;
-                    System.out.println("Pattern Matched on the first " + eventCount + " events");
-                    break;
-				}
-				postHandleEvent(handlerEvent);
-			}
+            // System.out.println(eventCount);
+            // state.printMemory();
+			boolean matched = analyzeEvent(handlerEvent, eventCount);
+            if (matched) {
+                flag = true;
+                System.out.println("Pattern Matched on the first " + eventCount + " events");
+                break;
+            }
+            postHandleEvent(handlerEvent);
 		}
         if(!flag) {
             System.out.println("Not matched");
