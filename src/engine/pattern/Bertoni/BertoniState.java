@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Vector;
 
 import engine.pattern.State;
 import event.Thread;
@@ -28,11 +27,12 @@ public class BertoniState extends State {
     private HashMap<Lock, VectorClock> lockClock = new HashMap<>();
 
     public HashMap<Thread, ArrayList<VectorClock>> history = new HashMap<>();
-    public TreeMap<TotalOrderVectorClock, Integer> idealToNonTerm = new TreeMap<>();
+    public TreeMap<Ideal, Integer> idealToNonTerm = new TreeMap<>();
     public HashMap<Integer, HashMap<Integer, Integer>> specialSym = new HashMap<>();
     public TreeSet<Ideal> ideals = new TreeSet<>();
 
-    private HashSet<ArrayList<Thread>> combinations = new HashSet<>();
+    private ArrayList<Thread> combination = new ArrayList<>();
+    private ArrayList<Thread> threadList;
 
     public BertoniState(HashSet<Thread> tSet, ArrayList<Integer> pattern) {
         numThreads = tSet.size();
@@ -47,7 +47,7 @@ public class BertoniState extends State {
             index++;
         }
         
-        idealToNonTerm.put(new TotalOrderVectorClock(emptyClock().getClock()), -1);
+        idealToNonTerm.put(new Ideal(emptyClock()), -1);
 
         int cnt = 0;
         for(int p : pattern) {
@@ -57,16 +57,7 @@ public class BertoniState extends State {
             this.pattern.get(p).add(cnt++);
         }
         this.k = pattern.size();
-        generateCombinations(new ArrayList<Thread>(), new ArrayList<Thread>(tSet), 0);
-    }
-
-    private void generateCombinations(ArrayList<Thread> base, ArrayList<Thread> candidates, int index) {
-        for(int i = index; i < candidates.size(); i++) {
-            ArrayList<Thread> combination = new ArrayList<>(base);
-            combination.add(candidates.get(i));
-            combinations.add(combination);
-            generateCombinations(combination, candidates, i + 1);
-        }
+        threadList = new ArrayList<Thread>(tSet);
     }
 
     public VectorClock emptyClock() {
@@ -110,39 +101,38 @@ public class BertoniState extends State {
                         locId);
         }
         ideals = generateIdeals(threadClock.get(thread), thread);
-
         
         for(Ideal ideal: ideals) {
             int nonterm = -1;
-            for(int thr: ideal.maximalThreads) {
-                Vector<Integer> clock = new Vector<>(ideal.getClock());
-                clock.set(thr, clock.get(thr) - 1);
-                TotalOrderVectorClock vc = new TotalOrderVectorClock(clock);
-                if(!idealToNonTerm.containsKey(vc)) {
+            for(int thr: ideal.getMaximalThreads()) {
+                int maxSym = ideal.getClock().getClockIndex(thr);
+                ideal.decreaseInThread(thr);
+                if(!idealToNonTerm.containsKey(ideal)) {
                     System.out.println(ideals.size());
-                    System.out.println(vc);
+                    System.out.println(ideal);
                     System.out.println(idealToNonTerm.size());
                     throw new IllegalArgumentException("Wrong Implementation! Earlier ideals should have been computed!");
                 }
-                if(nonterm < idealToNonTerm.get(vc)) {
-                    nonterm = idealToNonTerm.get(vc);
+                if(nonterm < idealToNonTerm.get(ideal)) {
+                    nonterm = idealToNonTerm.get(ideal);
                 }
-                if(specialSym.get(thr).containsKey(ideal.getClock().get(thr))) {
-                    int loc = specialSym.get(thr).get(ideal.getClock().get(thr));
-                    for(int sym : pattern.get(loc)) {
-                        if(sym == 0 || (idealToNonTerm.get(vc) == sym - 1)) {
-                            if(sym == k - 1) {
+                if(specialSym.get(thr).containsKey(maxSym)) {
+                    int loc = specialSym.get(thr).get(maxSym);
+                    for(int a_i : pattern.get(loc)) {
+                        if(a_i == 0 || (idealToNonTerm.get(ideal) == a_i - 1)) {
+                            if(a_i == k - 1) {
                                 return true;
                             }
-                            if(nonterm < sym) {
-                                nonterm = sym;
+                            if(nonterm < a_i) {
+                                nonterm = a_i;
                             }
                         }
                     }
                 }
+                ideal.increaseInThread(thr);
             }
             if(nonterm >= -1) {
-                idealToNonTerm.put(ideal.totclock, nonterm);
+                idealToNonTerm.put(ideal, nonterm);
             }
         }
         return false;
@@ -150,32 +140,40 @@ public class BertoniState extends State {
 
     private TreeSet<Ideal> generateIdeals(VectorClock vc, Thread thread) {
         ideals = new TreeSet<>();
-        ideals.add(new Ideal(new TotalOrderVectorClock(vc.getClock()), new HashSet<Integer>(Arrays.asList(threadToIndex.get(thread)))));
-        for(ArrayList<Thread> combination: combinations) {
-            if(combination.contains(thread)) {
-                continue;
-            }
-            HashMap<Integer, VectorClock> vcs = new HashMap<>();
-            vcs.put(threadToIndex.get(thread), vc);
-            generateIdeal(combination, 0, vcs, thread);
-        }
+        ideals.add(new Ideal(new VectorClock(vc), new HashSet<Integer>(Arrays.asList(threadToIndex.get(thread)))));
+        
+        generateCombination(0, vc, thread);
         return ideals;
     }
 
-    private void generateIdeal(ArrayList<Thread> combination, int index, HashMap<Integer, VectorClock> vcs, Thread thread) {
+    private void generateCombination(int index, VectorClock vc, Thread thread) {
+        for(int i = index; i < threadList.size(); i++) {
+            if(threadList.get(i) == thread) {
+                continue;
+            }
+            combination.add(threadList.get(i));
+            HashMap<Integer, VectorClock> vcs = new HashMap<>();
+            vcs.put(threadToIndex.get(thread), vc);
+            generateIdeal(0, vcs, thread);
+            generateCombination(i + 1, vc, thread);
+            combination.remove(combination.size() - 1);
+        }
+    }
+
+    private void generateIdeal(int index, HashMap<Integer, VectorClock> vcs, Thread thread) {
         if(index == combination.size()) {
             VectorClock vc = new VectorClock(numThreads);
             vc.updateWithMax(vcs.values().toArray(new VectorClock[0]));
             HashSet<Integer> maxThreads = getMaximalThreads(vcs);
             if(maxThreads.size() == combination.size() + 1) {
-                ideals.add(new Ideal(new TotalOrderVectorClock(vc.getClock()), maxThreads));
+                ideals.add(new Ideal(vc, maxThreads));
             }
         }
         else {
             Thread thr = combination.get(index);
             for(int i = vcs.get(threadToIndex.get(thread)).getClockIndex(threadToIndex.get(thr)); i < history.get(thr).size(); i++) {
                 vcs.put(threadToIndex.get(thr), history.get(thr).get(i));
-                generateIdeal(combination, index + 1, vcs, thread);
+                generateIdeal(index + 1, vcs, thread);
                 vcs.remove(threadToIndex.get(thr));
             }
         }
@@ -207,30 +205,53 @@ public class BertoniState extends State {
     }
 }
 
-class TotalOrderVectorClock implements Comparable<TotalOrderVectorClock> {
+class Ideal implements Comparable<Ideal> {
 
-    public Vector<Integer> clock;
-    public int dim;
-    public int sum;
+    private VectorClock vectorClock;
+    private int sum;
+    private HashSet<Integer> maximalThreads;
 
-    public TotalOrderVectorClock(Vector<Integer> vc) {
-        clock = new Vector<>(vc);
-        dim = clock.size();
+    public Ideal(VectorClock vc, HashSet<Integer> mt) {
+        this(vc);
+        maximalThreads = mt;
+    }
+
+    public Ideal(VectorClock vc) {
+        vectorClock = vc;
         sum = 0;
-        for(int i: clock) {
+        for(int i: vectorClock.getClock()) {
             sum += i;
         }
+        maximalThreads = new HashSet<>();
+    }
+
+    public VectorClock getClock() {
+        return vectorClock;
+    }
+
+    public HashSet<Integer> getMaximalThreads() {
+        return maximalThreads;
+    }
+
+    public void decreaseInThread(int threadIndex) {
+        vectorClock.setClockIndex(threadIndex, vectorClock.getClockIndex(threadIndex) - 1);
+        sum -= 1;
+    }
+
+    public void increaseInThread(int threadIndex) {
+        vectorClock.setClockIndex(threadIndex, vectorClock.getClockIndex(threadIndex) + 1);
+        sum += 1;
     }
 
     @Override
-	public int compareTo(TotalOrderVectorClock other) {
-        if (!(this.dim == other.dim)) {
+	public int compareTo(Ideal other) {
+        if (!(this.vectorClock.getDim() == other.vectorClock.getDim())) {
 			throw new IllegalArgumentException("Mismatch in this.dim and argument.dim");
 		}
         int sumDiff = this.sum - other.sum;
 		if (sumDiff == 0) {
-			for(int i = 0; i < this.clock.size(); i++) {
-                int diff = this.clock.get(i) - other.clock.get(i);
+			for(int i = 0; i < this.vectorClock.getDim(); i++) {
+                int diff = this.vectorClock.getClockIndex(i) - other.vectorClock.getClockIndex(i);
                 if(diff != 0) {
                     return diff;
                 }
@@ -243,31 +264,6 @@ class TotalOrderVectorClock implements Comparable<TotalOrderVectorClock> {
 
     @Override
     public String toString() {
-        return clock.toString() + " " + sum;
-    }
-}
-
-class Ideal implements Comparable<Ideal> {
-
-    public TotalOrderVectorClock totclock;
-    public HashSet<Integer> maximalThreads;
-
-    public Ideal(TotalOrderVectorClock vc, HashSet<Integer> mt) {
-        totclock = vc;
-        maximalThreads = mt;
-    }
-
-    public Vector<Integer> getClock() {
-        return totclock.clock;
-    }
-
-    @Override
-	public int compareTo(Ideal other) {
-        return this.totclock.compareTo(other.totclock);
-	}
-
-    @Override
-    public String toString() {
-        return totclock.toString() + ", " + maximalThreads.toString();
+        return vectorClock.toString() + " " + sum + ", " + maximalThreads.toString();
     }
 }

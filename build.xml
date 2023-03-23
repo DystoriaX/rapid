@@ -120,7 +120,7 @@
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/patternTest/parse2.rr" />
+            <arg value="benchmark/patternTest/parse.rr" />
             <arg value="-m" />
             <arg value="benchmark/patternTest/patternshort.rr" />
             <classpath refid="rapid.classpath" />
@@ -131,9 +131,9 @@
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/logstash/TEST_net_logstash_logback_util_ThreadLocalHolderTest_testThreadValues_expectsAtMaximumOneValuePerThreadInThreadValues/TEST_net_logstash_logback_util_ThreadLocalHolderTest_testThreadValues_expectsAtMaximumOneValuePerThreadInThreadValues.rr" />
+            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/TEST_net_objecthunter_exp4j_ConcurrentTest.rr" />
             <arg value="-m" />
-            <arg value="benchmark/logstash/TEST_net_logstash_logback_util_ThreadLocalHolderTest_testThreadValues_expectsAtMaximumOneValuePerThreadInThreadValues/pattern/pattern1" />
+            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/pattern/pattern0" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>
