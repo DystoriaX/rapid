@@ -14,12 +14,13 @@ public class LocalPatternGenerator extends PatternGenerator {
 
     public LocalPatternGenerator(String sourceFile, String patternFile, int number) {
         super(sourceFile, patternFile, number);
-        this.interval = 200000;
+        this.interval = (numOfEvents < 200000) ? numOfEvents : 200000;
     }
 
     @Override
     public boolean generatePattern(ArrayList<String> pattern) {
-        long start = 0;
+        long start = (numOfEvents == interval) ? 0 : (long)(Math.random() * (numOfEvents - interval));
+        System.out.println(start);
 
         HashMap<Thread, HashSet<Integer>> candidates = new HashMap<>();
         HashMap<Integer, Thread> indexToThread = new HashMap<>();

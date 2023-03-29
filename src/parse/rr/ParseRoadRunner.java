@@ -334,8 +334,9 @@ public class ParseRoadRunner {
 		System.out.println("Start Parsing");
 		ParseRoadRunner parser = new ParseRoadRunner(traceFile);
 		while(parser.checkAndGetNext(e)){
-			System.out.println(e.toCompactString());
+			System.out.println(e.toString());
 		}
+		System.out.println(parser.locationToIdMap);
 	}
 	
 	public static void main(String args[]){

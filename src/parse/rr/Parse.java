@@ -56,7 +56,7 @@ public class Parse {
 			String thId = matcher.group(2);
 			String aux = matcher.group(3);
 			String locId = "";
-			if(tp.isAccessType()){
+			if(tp.isAccessType() || tp.isBegin() || tp.isEnd()){
 				locId = matcher.group(7);
 				if(locId == null){
 					throw new CannotParseException(line);
