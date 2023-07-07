@@ -2,11 +2,12 @@ import cmd.CmdOptions;
 import cmd.GetOptions;
 import engine.pattern.Vectorclock.VectorClockEngine;
 
-public class VCPatternProperties {
+public class VCPatternPropertiesPart {
     public static void main(String[] args) {		
 		CmdOptions options = new GetOptions(args).parse();
 		String patternFile = options.excludeList;
 		VectorClockEngine engine = new VectorClockEngine(options.parserType, options.path, patternFile);
+        engine.partition = true;
 		boolean time_reporting = false;
 		long startTimeAnalysis = 0;
 		if(time_reporting){

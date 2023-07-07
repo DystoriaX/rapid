@@ -19,11 +19,13 @@ public class ParseStandard {
 	private HashMap<String, Lock> lockMap;
 	private HashMap<String, Variable> variableMap;
 	int totThreads;
-	BufferedReader bufferedReader;
+	public BufferedReader bufferedReader;
 	String line;
 	Parse parser;
 	EventInfo eInfo;
-	long totEvents;
+	public long totEvents;
+	public long tot;
+	public long numOfLocations = 0;
 
 	public ParseStandard(String traceFile){
 		threadMap = new HashMap<String, Thread>();
@@ -52,6 +54,7 @@ public class ParseStandard {
 			while(this.hasNext()){
 				getNextEvent(e);
 			}
+			this.tot = this.totEvents;
 			this.totEvents = 0; //Resetting totEvents is required to ensure correct AuxId
 			try{
 				bufferedReader = new BufferedReader(new FileReader(traceFile));
@@ -75,6 +78,9 @@ public class ParseStandard {
 		Thread t = threadMap.get(tname);
 
 		int LID = Integer.parseInt(eInfo.locId);
+		if(LID > numOfLocations) {
+			numOfLocations = LID;
+		}
 		String ename = "E" + Long.toString(totEvents);
 
 		if (eInfo.type.isRead()) {

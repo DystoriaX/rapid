@@ -11,17 +11,21 @@ import engine.Engine;
 import event.Thread;
 import parse.ParserType;
 import parse.rr.ParseRoadRunner;
+import parse.std.ParseStandard;
 
 public class PatternEngine<S extends State, E extends PatternEvent<S>> extends Engine<E> {
     protected long eventCount;
     protected long totalSkippedEvents;
     
     protected HashSet<Thread> threadSet;
-    protected HashMap<Integer, String> idToLocationMap;
-    protected HashMap<String, Integer> locationToIdMap;
+    protected HashMap<Integer, String> idToLocationMap = null;
+    protected HashMap<String, Integer> locationToIdMap = null;
     protected S state;
 
     protected ArrayList<Integer> pattern = new ArrayList<>();
+
+    public boolean partition = false;
+    long startTimeAnalysis = 0;
 
     public PatternEngine(ParserType pType, String trace_folder, String patternFileName) {
         super(pType);
@@ -29,8 +33,13 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         try {
             Scanner myReader = new Scanner(new File(patternFileName));
             while (myReader.hasNextLine()) {
-              String loc = myReader.nextLine();
-              pattern.add(locationToIdMap.get(loc));
+                String loc = myReader.nextLine();
+                if(locationToIdMap != null){
+                    pattern.add(locationToIdMap.get(loc));
+                }
+                else {
+                    pattern.add(Integer.parseInt(loc));
+                }
             }
             myReader.close();
         } catch (FileNotFoundException e) {
@@ -56,7 +65,14 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 
     public void analyzeTrace() {
 		if (this.parserType.isRR()) {
+            startTimeAnalysis = System.currentTimeMillis();
 			analyzeTraceRR();
+            long stopTimeAnalysis = System.currentTimeMillis(); //System.nanoTime();
+			long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
+			System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds");
+		}
+        if (this.parserType.isSTD()) {
+			analyzeTraceSTD();
 		}
 		printCompletionStatus();
 		// postAnalysis();
@@ -66,9 +82,12 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         boolean flag = false;
         while (rrParser.checkAndGetNext(handlerEvent)) {
 			eventCount = eventCount + 1;
-            // System.out.println(eventCount);
-            // state.printMemory();
 			boolean matched = analyzeEvent(handlerEvent, eventCount);
+            if(partition && eventCount % 1000000 == 0) {
+                long stopTimeAnalysis = System.currentTimeMillis(); //System.nanoTime();
+			    long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
+			    System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds after " + eventCount + " events");
+            }
             if (matched) {
                 flag = true;
                 System.out.println("Pattern Matched on the first " + eventCount + " events");
@@ -76,6 +95,25 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
             }
             postHandleEvent(handlerEvent);
 		}
+        if(!flag) {
+            System.out.println("Not matched");
+        }
+        state.printMemory();
+    }
+
+    private void analyzeTraceSTD() {
+        boolean flag = false;
+        while(stdParser.hasNext()){
+			eventCount = eventCount + 1;
+			stdParser.getNextEvent(handlerEvent);
+            boolean matched = analyzeEvent(handlerEvent, eventCount);
+            if (matched) {
+                flag = true;
+                System.out.println("Pattern Matched on the first " + eventCount + " events");
+                break;
+            }
+            postHandleEvent(handlerEvent);
+        }
         if(!flag) {
             System.out.println("Not matched");
         }
@@ -91,7 +129,8 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
     }
 
 	protected void initializeReaderSTD(String trace_file) {
-
+        stdParser = new ParseStandard(trace_file, true);
+		threadSet = stdParser.getThreadSet();
     }
 
 	protected void initializeReaderRR(String trace_file) {

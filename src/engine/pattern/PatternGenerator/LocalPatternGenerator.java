@@ -6,21 +6,39 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
+import event.Event;
 import event.Thread;
+import parse.ParserType;
 
 public class LocalPatternGenerator extends PatternGenerator {
 
     private long interval;
 
-    public LocalPatternGenerator(String sourceFile, String patternFile, int number) {
-        super(sourceFile, patternFile, number);
-        this.interval = (numOfEvents < 200000) ? numOfEvents : 200000;
+    public LocalPatternGenerator(ParserType pType, String sourceFile, String patternFile, int number) {
+        super(pType, sourceFile, patternFile, number);
+        this.interval = (numOfEvents < 1000000000) ? numOfEvents : (numOfEvents / 100);
+    }
+
+    boolean checkAndGetNext(Event handlerEvent) {
+        if(this.parserType.isRR()) {
+            return rrParser.checkAndGetNext(handlerEvent);
+        }
+        if(this.parserType.isSTD()) {
+            if(stdParser.hasNext()) {
+                stdParser.getNextEvent(handlerEvent);
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean generatePattern(ArrayList<String> pattern) {
-        long start = (numOfEvents == interval) ? 0 : (long)(Math.random() * (numOfEvents - interval));
-        System.out.println(start);
+        long start = (numOfEvents == interval) ? 0 : (long)((Math.random() + 0.5) / 2 * (numOfEvents - interval));
+        System.out.println(numOfEvents + " " + interval + " " + start);
 
         HashMap<Thread, HashSet<Integer>> candidates = new HashMap<>();
         HashMap<Integer, Thread> indexToThread = new HashMap<>();
@@ -32,10 +50,11 @@ public class LocalPatternGenerator extends PatternGenerator {
             index++;
         }
         long cnt = 0;
-        while(rrParser.checkAndGetNext(handlerEvent)) {
+        while(checkAndGetNext(handlerEvent)) {
             cnt++;
             if(cnt >= start && cnt < start + interval) {
-                if(idToLocationMap.get(handlerEvent.getLocId()).length() > 0) {
+                String loc = idToLocation(handlerEvent.getLocId());
+                if(loc.length() > 0 && !loc.equals("null")) {
                     if(!candidates.containsKey(handlerEvent.getThread())) {
                         candidates.put(handlerEvent.getThread(), new HashSet<>());
                     }
@@ -76,7 +95,7 @@ public class LocalPatternGenerator extends PatternGenerator {
                     ArrayList<Integer> locsArray = new ArrayList<>(locs);
                     int locId = locsArray.get(randomIndex); 
                     if(!chosenEvents.contains(locId)) {
-                        pattern.add(idToLocationMap.get(locId));
+                        pattern.add(idToLocation(locId));
                         chosenEvents.add(locId);
                         cnt++;
                         for(Thread key: candidates.keySet()) {

@@ -19,8 +19,14 @@ public class MetaPatternEngine extends PatternEngine<MetaPatternState, MetaPatte
                 ArrayList<Integer> thispattern = new ArrayList<>();
                 Scanner myReader = new Scanner(new File(patternFile + "/pattern" + i));
                 while (myReader.hasNextLine()) {
-                  String loc = myReader.nextLine();
-                  thispattern.add(locationToIdMap.get(loc));
+                    String loc = myReader.nextLine();
+                    if(this.parserType.isRR()) {
+                        thispattern.add(locationToIdMap.get(loc));
+                    }
+                    if(this.parserType.isSTD()) {
+                        thispattern.add(Integer.parseInt(loc));
+                    }
+                  
                 }
                 myReader.close();
                 patterns.add(thispattern);
@@ -30,6 +36,12 @@ public class MetaPatternEngine extends PatternEngine<MetaPatternState, MetaPatte
             }
         }
         
-        state = new MetaPatternState(threadSet, patterns, locationToIdMap.size());
+        if(this.parserType.isRR()) {
+            state = new MetaPatternState(threadSet, patterns, locationToIdMap.size());
+        }
+        if(this.parserType.isSTD()) {
+            state = new MetaPatternState(threadSet, patterns, stdParser.numOfLocations);
+        }
+        
     }
 }

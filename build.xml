@@ -120,9 +120,9 @@
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/patternTest/parse.rr" />
+            <arg value="benchmark/jfreechart/test.rr" />
             <arg value="-m" />
-            <arg value="benchmark/patternTest/patternshort.rr" />
+            <arg value="benchmark/jfreechart/pattern" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>
@@ -140,20 +140,20 @@
     <target name="metainfo" depends="build">
         <java classname="MetaPatternInfo" fork="true">
             <arg value="-f" />
-            <arg value="rr" />
+            <arg value="std" />
             <arg value="-p" />
-            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/TEST_net_objecthunter_exp4j_ConcurrentTest.rr" />
+            <arg value="benchmark/hedc/trace.std" />
             <arg value="-m" />
-            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/pattern" />
+            <arg value="benchmark/hedc/pattern" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>
     <target name="generatePattern" depends="build">
         <java classname="PatternGeneration" fork="true">
             <arg value="-f" />
-            <arg value="rr" />
+            <arg value="std" />
             <arg value="-p" />
-            <arg value="benchmark/zookeeper/TEST_single/test1.rr" />
+            <arg value="benchmark/hedc/trace.std" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

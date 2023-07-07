@@ -12,7 +12,9 @@ import java.util.HashSet;
 
 import event.Event;
 import event.Thread;
+import parse.ParserType;
 import parse.rr.ParseRoadRunner;
+import parse.std.ParseStandard;
 
 public abstract class PatternGenerator {
     protected int k;
@@ -20,27 +22,65 @@ public abstract class PatternGenerator {
     protected String patternFile;
     protected int number;
 
+    protected ParserType parserType;
+	protected ParseStandard stdParser; // STD
     protected ParseRoadRunner rrParser; // RR
 	protected Event handlerEvent = new Event();
 
     protected ArrayList<ArrayList<String>> patterns;
     protected HashSet<Thread> threadSet;
-    protected HashMap<Integer, String> idToLocationMap;
+    protected HashMap<Integer, String> idToLocationMap = null;
     protected long numOfEvents;
 
-    public PatternGenerator(String sourceFile, String patternFile, int number) {
+    public PatternGenerator(ParserType pType,  String sourceFile, String patternFile, int number) {
         this.sourceFile = sourceFile;
         this.patternFile = patternFile;
         this.number = number;
         patterns = new ArrayList<>();
-        initRRParser();
-        numOfEvents = rrParser.tot;
+        this.parserType = pType;
+        initParser();
+        
+    }
+
+    protected void initParser() {
+        if(this.parserType.isRR()) {
+            initRRParser();
+        }
+        if(this.parserType.isSTD()) {
+            initSTDParser();
+        }
     }
 
     protected void initRRParser() {
         rrParser = new ParseRoadRunner(sourceFile, true);
+        numOfEvents = rrParser.tot;
         threadSet = rrParser.getThreadSet();
         idToLocationMap = rrParser.idToLocationMap;
+    }
+
+    protected void initSTDParser() {
+        stdParser = new ParseStandard(sourceFile, true);
+		threadSet = stdParser.getThreadSet();
+        numOfEvents = stdParser.tot;
+    }
+
+    protected void resetParser() {
+        if(this.parserType.isRR()) {
+            resetRRParser();
+        }
+        if(this.parserType.isSTD()) {
+            resetSTDParser();
+        }
+    }
+
+    protected void resetSTDParser() {
+        stdParser.totEvents = 0;
+        try{
+            stdParser.bufferedReader = new BufferedReader(new FileReader(sourceFile));
+        }
+        catch (FileNotFoundException ex) {
+            System.out.println("Unable to open file '" + sourceFile + "'");
+        }
     }
 
     protected void resetRRParser() {
@@ -57,13 +97,22 @@ public abstract class PatternGenerator {
         for(int i = 0; i < number; i++) {
             System.out.println("start " + i);
             this.k = i >= (int)(number / 2) ? 3 : 5;
-            resetRRParser();
+            resetParser();
             ArrayList<String> pattern = new ArrayList<>();
             while(!this.generatePattern(pattern)) {
                 resetRRParser();
             }
             patterns.add(pattern);
             writeToFile(i);
+        }
+    }
+
+    protected String idToLocation(int locId) {
+        if(idToLocationMap != null) {
+            return idToLocationMap.get(locId);
+        }
+        else {
+            return String.valueOf(locId);
         }
     }
 

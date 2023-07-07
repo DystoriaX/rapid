@@ -14,7 +14,7 @@ public class MetaPatternState extends State {
     ArrayList<ArrayList<Integer>> patterns;
     ArrayList<Long> numOfLocationsInPattern = new ArrayList<>();
 
-    public MetaPatternState(HashSet<Thread> tSet, ArrayList<ArrayList<Integer>> patterns, int numOfLocations) {
+    public MetaPatternState(HashSet<Thread> tSet, ArrayList<ArrayList<Integer>> patterns, long numOfLocations) {
         numOfThreads = tSet.size();
         this.numOfLocations = numOfLocations;
         numOfEvents = 0;

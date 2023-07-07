@@ -42,4 +42,8 @@ public class MetaPatternEvent extends PatternEvent<MetaPatternState> {
 	public boolean HandleSubEnd(MetaPatternState state) {
         return false;
     }
+
+    public boolean HandleSubDummy(MetaPatternState state) {
+        return false;
+    }
 }
