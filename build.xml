@@ -120,9 +120,9 @@
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/jfreechart/test.rr" />
+            <arg value="benchmark/bug-bench/zmq/test.rr" />
             <arg value="-m" />
-            <arg value="benchmark/jfreechart/pattern" />
+            <arg value="benchmark/bug-bench/zmq/pattern" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

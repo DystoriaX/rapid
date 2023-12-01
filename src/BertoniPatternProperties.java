@@ -7,7 +7,7 @@ public class BertoniPatternProperties {
 		CmdOptions options = new GetOptions(args).parse();
 		String patternFile = options.excludeList;
 		BertoniEngine engine = new BertoniEngine(options.parserType, options.path, patternFile);
-		boolean time_reporting = true;
+		boolean time_reporting = false;
 		long startTimeAnalysis = 0;
 		if(time_reporting){
 			startTimeAnalysis = System.currentTimeMillis(); //System.nanoTime();

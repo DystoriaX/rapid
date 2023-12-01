@@ -65,11 +65,7 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 
     public void analyzeTrace() {
 		if (this.parserType.isRR()) {
-            startTimeAnalysis = System.currentTimeMillis();
 			analyzeTraceRR();
-            long stopTimeAnalysis = System.currentTimeMillis(); //System.nanoTime();
-			long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
-			System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds");
 		}
         if (this.parserType.isSTD()) {
 			analyzeTraceSTD();
@@ -80,15 +76,13 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 
     private void analyzeTraceRR() {
         boolean flag = false;
+        startTimeAnalysis = System.currentTimeMillis();
+        long stopTimeAnalysis = 0;
         while (rrParser.checkAndGetNext(handlerEvent)) {
 			eventCount = eventCount + 1;
 			boolean matched = analyzeEvent(handlerEvent, eventCount);
-            if(partition && eventCount % 1000000 == 0) {
-                long stopTimeAnalysis = System.currentTimeMillis(); //System.nanoTime();
-			    long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
-			    System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds after " + eventCount + " events");
-            }
             if (matched) {
+                stopTimeAnalysis = System.currentTimeMillis();
                 flag = true;
                 System.out.println("Pattern Matched on the first " + eventCount + " events");
                 break;
@@ -96,8 +90,11 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
             postHandleEvent(handlerEvent);
 		}
         if(!flag) {
+            stopTimeAnalysis = System.currentTimeMillis();
             System.out.println("Not matched");
         }
+        long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
+        System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds");
         state.printMemory();
     }
 
