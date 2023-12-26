@@ -116,13 +116,13 @@
         </java>
     </target>
     <target name="pattern" depends="build">
-        <java classname="BertoniPatternProperties" fork="true">
+        <java classname="Prefix" fork="true">
             <arg value="-f" />
             <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/bug-bench/zmq/test.rr" />
+            <arg value="benchmark/bug-bench/jfreechart/test.rr" />
             <arg value="-m" />
-            <arg value="benchmark/bug-bench/zmq/pattern" />
+            <arg value="benchmark/bug-bench/jfreechart/pattern" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

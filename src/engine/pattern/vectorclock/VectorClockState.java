@@ -122,7 +122,8 @@ public class VectorClockState extends State {
     }
 
     public void printMemory() {
-        // System.out.println(currentState.keySet());
+        // for(Thread t: threadClock.keySet())
+        //     System.out.println(threadClock.get(t));
     }
 }
 
