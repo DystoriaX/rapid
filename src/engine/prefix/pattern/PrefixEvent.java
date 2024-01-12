@@ -1,6 +1,7 @@
-package engine.prefix;
+package engine.prefix.pattern;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.javatuples.Pair;
 
@@ -11,18 +12,27 @@ import util.PipedDeepCopy;
 public class PrefixEvent extends VectorClockEvent {
 
     public boolean Handle(State state) {
-        System.out.println(state.states.size());
         ArrayList<Pair<VectorClockState, DependentInfo>> newStates = new ArrayList<>();
         boolean matched = false;
-        for(Pair<VectorClockState, DependentInfo> track_state: state.states){
-            if(mustIgnore(track_state.getValue1())) {
+        
+        boolean threadLocal = this.getType().isTransactionType() || (this.getType().isAccessType() && this.variable.touchedThreads.size() == 1);
+        for(Iterator<Pair<VectorClockState, DependentInfo>> iterator = state.states.iterator(); iterator.hasNext();){
+            Pair<VectorClockState, DependentInfo> track_state = iterator.next(); 
+            if(!threadLocal && mustIgnore(track_state.getValue1())) {
                 ignore(track_state.getValue1());
+                if(track_state.getValue1().allThreads(state.tSet.size())) {
+                    iterator.remove();
+                }
             }
             else {
-                DependentInfo dep_new = (DependentInfo) PipedDeepCopy.copy(track_state.getValue1());
-                ignore(dep_new);
-                VectorClockState copied_state = (VectorClockState) PipedDeepCopy.copy(track_state.getValue0());
-                newStates.add(new Pair<VectorClockState,DependentInfo>(copied_state, dep_new));
+                if(!threadLocal && (state.prob == 1 || Math.random() <= state.prob)) {
+                    DependentInfo dep_new = (DependentInfo) PipedDeepCopy.copy(track_state.getValue1());
+                    ignore(dep_new);
+                    if(!dep_new.allThreads(state.tSet.size())) {
+                        VectorClockState copied_state = (VectorClockState) PipedDeepCopy.copy(track_state.getValue0());
+                        newStates.add(new Pair<VectorClockState,DependentInfo>(copied_state, dep_new));
+                    }
+                }
 
                 matched = super.Handle(track_state.getValue0());
                 if(matched) {
@@ -40,9 +50,6 @@ public class PrefixEvent extends VectorClockEvent {
             }
         }
         state.states.addAll(newStates);
-        // for(Pair<VectorClockState, DependentInfo> track_state: state.states){
-        //     track_state.getValue0().printMemory();
-        // }
 		return matched;
 	}
 
@@ -56,6 +63,10 @@ public class PrefixEvent extends VectorClockEvent {
             return dep.check_dependency(this.thread) || dep.check_dependency(this.variable);
         }
 
+        if(this.getType().isJoin()) {
+            return dep.check_dependency(this.thread) || dep.check_dependency(this.target);
+        }
+
 		return dep.check_dependency(this.thread);
 	}
 
@@ -64,6 +75,10 @@ public class PrefixEvent extends VectorClockEvent {
 
         if(this.getType().isWrite()) {
             dep.add(this.variable);
+        }
+
+        if(this.getType().isFork()) {
+            dep.add(this.target);
         }
     }
 }

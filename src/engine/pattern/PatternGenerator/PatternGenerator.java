@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
 
 import event.Event;
 import event.Thread;
@@ -32,6 +33,12 @@ public abstract class PatternGenerator {
     protected HashMap<Integer, String> idToLocationMap = null;
     protected long numOfEvents;
 
+    protected ArrayList<Long> multiThreadedStarts = new ArrayList<>();
+
+    ArrayList<HashMap<Thread, HashSet<Integer>>> candidatesLists = new ArrayList<>();
+    HashMap<Integer, Thread> indexToThread = new HashMap<>();
+    HashMap<Thread, Integer> threadToIndex = new HashMap<>();
+
     public PatternGenerator(ParserType pType,  String sourceFile, String patternFile, int number) {
         this.sourceFile = sourceFile;
         this.patternFile = patternFile;
@@ -39,7 +46,9 @@ public abstract class PatternGenerator {
         patterns = new ArrayList<>();
         this.parserType = pType;
         initParser();
-        
+        for(int i = 0; i < number; i++) {
+            candidatesLists.add(new HashMap<>());
+        }
     }
 
     protected void initParser() {
@@ -56,6 +65,12 @@ public abstract class PatternGenerator {
         numOfEvents = rrParser.tot;
         threadSet = rrParser.getThreadSet();
         idToLocationMap = rrParser.idToLocationMap;
+        int index = 0;
+        for(Thread thread: threadSet) {
+            threadToIndex.put(thread, index);
+            indexToThread.put(index, thread);
+            index++;
+        }
     }
 
     protected void initSTDParser() {
@@ -94,14 +109,60 @@ public abstract class PatternGenerator {
     }
 
     public void generatePatterns() {
+        resetRRParser();
+        long eventCount = 0;
+        HashSet<Thread> threads = new HashSet<>();
+        while(rrParser.checkAndGetNext(handlerEvent)) {
+            eventCount += 1;
+            threads.add(handlerEvent.getThread());
+            if(eventCount % 5000 == 0) {
+                if(threads.size() > 1) {
+                    multiThreadedStarts.add(eventCount - 5000);
+                }
+                threads.clear();
+            }
+        }
+        if(threads.size() > 1) {
+            multiThreadedStarts.add(eventCount < 5000 ? 0 : eventCount - 5000);
+        }
+        System.out.println(eventCount);
+        System.out.println(multiThreadedStarts.size());
+        resetRRParser();
+        ArrayList<Long> starts = new ArrayList<>();
+        for(int i = 0; i < number; i++) {
+            Random generator = new Random();
+            starts.add(multiThreadedStarts.get(generator.nextInt(multiThreadedStarts.size())));
+        }
+        
+        long cnt = 0;
+        while(rrParser.checkAndGetNext(handlerEvent)) {
+            cnt++;
+            for(int i = 0; i < number; i++) {
+                long start = starts.get(i);
+                long interval = 5000;
+                if(cnt >= start && cnt < start + interval) {
+                    String loc = idToLocation(handlerEvent.getLocId());
+                    if(loc.length() > 0 && !loc.equals("null")) {
+                        if(!candidatesLists.get(i).containsKey(handlerEvent.getThread())) {
+                            candidatesLists.get(i).put(handlerEvent.getThread(), new HashSet<>());
+                        }
+                        candidatesLists.get(i).get(handlerEvent.getThread()).add(handlerEvent.getLocId());
+                    }
+                }      
+            }    
+        }
+
         for(int i = 0; i < number; i++) {
             System.out.println("start " + i);
             this.k = i >= (int)(number / 2) ? 3 : 5;
             resetParser();
             ArrayList<String> pattern = new ArrayList<>();
-            while(!this.generatePattern(pattern)) {
-                resetRRParser();
-            }
+            pattern.add(((Long)starts.get(i)).toString());
+            pattern.add(((Long)(starts.get(i) + 5000)).toString());
+            this.generatePattern(pattern, candidatesLists.get(i)); 
+            // while(!this.generatePattern(pattern, candidatesLists.get(i))) {
+            //     resetRRParser();
+            // }
             patterns.add(pattern);
             writeToFile(i);
         }
@@ -116,7 +177,7 @@ public abstract class PatternGenerator {
         }
     }
 
-    protected abstract boolean generatePattern(ArrayList<String> pattern);
+    protected abstract boolean generatePattern(ArrayList<String> pattern, HashMap<Thread, HashSet<Integer>> candidates);
 
     private void writeToFile(int i) {
         try {

@@ -1,4 +1,4 @@
-package engine.prefix;
+package engine.prefix.pattern;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -15,20 +15,28 @@ public class State {
     public ArrayList<Pair<VectorClockState, DependentInfo>> states = new ArrayList<>(); 
     HashSet<Thread> tSet;
     ArrayList<Integer> pattern;
+    double prob;
 
-    public State(HashSet<Thread> tSet, ArrayList<Integer> pattern) {
+    public State(HashSet<Thread> tSet, ArrayList<Integer> pattern, double prob) {
         states.add(new Pair<VectorClockState, DependentInfo>(new VectorClockState(tSet, pattern), new DependentInfo()));
         this.tSet = tSet;
         this.pattern = pattern;
+        this.prob = prob;
     };
 
-    public void printMemory() {}
+    public void printMemory() {
+        System.out.println(states.size());
+    }
 }
 
 class DependentInfo implements Serializable {
     HashSet<Thread> tSet = new HashSet<>();
     HashSet<Variable> wr_vars = new HashSet<>();
     HashSet<Lock> rel_locks = new HashSet<>();
+
+    public boolean allThreads(int n) {
+        return tSet.size() == n;
+    }
 
     public boolean check_dependency(Thread t) {
         return tSet.contains(t);

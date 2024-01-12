@@ -1,4 +1,4 @@
-package engine.prefix;
+package engine.prefix.deadlock;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,7 +14,7 @@ import parse.rr.ParseRoadRunner;
 import parse.std.ParseStandard;
 
 public class PrefixEngine extends Engine<PrefixEvent> {
-   protected long eventCount;
+    protected long eventCount;
     protected long totalSkippedEvents;
     
     protected HashSet<Thread> threadSet;
@@ -26,19 +26,31 @@ public class PrefixEngine extends Engine<PrefixEvent> {
 
     public boolean partition = false;
     long startTimeAnalysis = 0;
+    long start;
+    long end;
 
-    public PrefixEngine(ParserType pType, String trace_folder, String patternFileName) {
+    public PrefixEngine(ParserType pType, String trace_folder, String patternFileName, double prob) {
         super(pType);
-        this.initializeReader(trace_folder);
         try {
             Scanner myReader = new Scanner(new File(patternFileName));
+            int cnt = 0;
             while (myReader.hasNextLine()) {
+                cnt += 1;
                 String loc = myReader.nextLine();
-                if(locationToIdMap != null){
-                    pattern.add(locationToIdMap.get(loc));
+                if(cnt == 1) {
+                    start = Integer.valueOf(loc);
+                }
+                else if (cnt == 2) {
+                    end = Integer.valueOf(loc);
+                    this.initializeReader(trace_folder);
                 }
                 else {
-                    pattern.add(Integer.parseInt(loc));
+                    if(locationToIdMap != null){
+                        pattern.add(locationToIdMap.get(loc));
+                    }
+                    else {
+                        pattern.add(Integer.parseInt(loc));
+                    }
                 }
             }
             myReader.close();
@@ -49,7 +61,7 @@ public class PrefixEngine extends Engine<PrefixEvent> {
         eventCount = 0;
         totalSkippedEvents = 0;
         handlerEvent = new PrefixEvent();
-        state = new State(threadSet, pattern);
+        state = new State(threadSet, pattern, prob);
     }
 
     protected boolean analyzeEvent(PrefixEvent handlerEvent, Long eventCount){
@@ -80,25 +92,28 @@ public class PrefixEngine extends Engine<PrefixEvent> {
         boolean flag = false;
         startTimeAnalysis = System.currentTimeMillis();
         long stopTimeAnalysis = 0;
-        while (rrParser.checkAndGetNext(handlerEvent)) {
-			eventCount = eventCount + 1;
-            System.out.println(eventCount);
-			boolean matched = analyzeEvent(handlerEvent, eventCount);
-            if (matched) {
-                stopTimeAnalysis = System.currentTimeMillis();
-                flag = true;
-                System.out.println("Pattern Matched on the first " + eventCount + " events");
+        while(rrParser.checkAndGetNext(handlerEvent)) {
+            eventCount = eventCount + 1;
+            if(eventCount >= start && eventCount <= end) {
+                boolean matched = analyzeEvent(handlerEvent, eventCount);
+                if (matched) {
+                    stopTimeAnalysis = System.currentTimeMillis();
+                    flag = true;
+                    System.out.println("Pattern Matched on the first " + eventCount + " events");
+                    break;
+                }
+                postHandleEvent(handlerEvent);
+            }
+            if(eventCount > end) {
                 break;
             }
-            postHandleEvent(handlerEvent);
-		}
+        }
         if(!flag) {
             stopTimeAnalysis = System.currentTimeMillis();
             System.out.println("Not matched");
         }
         long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
         System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds");
-        state.printMemory();
     }
 
     private void analyzeTraceSTD() {
@@ -134,7 +149,7 @@ public class PrefixEngine extends Engine<PrefixEvent> {
     }
 
 	protected void initializeReaderRR(String trace_file) {
-        rrParser = new ParseRoadRunner(trace_file, true);
+        rrParser = new ParseRoadRunner(trace_file, true, start, end);
         threadSet = rrParser.getThreadSet();
         idToLocationMap = rrParser.idToLocationMap;
         locationToIdMap = rrParser.locationToIdMap;

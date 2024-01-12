@@ -1,4 +1,4 @@
-package engine.pattern;
+package engine.prefix.pattern;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,25 +13,24 @@ import parse.ParserType;
 import parse.rr.ParseRoadRunner;
 import parse.std.ParseStandard;
 
-public class PatternEngine<S extends State, E extends PatternEvent<S>> extends Engine<E> {
+public class PrefixEngine extends Engine<PrefixEvent> {
     protected long eventCount;
     protected long totalSkippedEvents;
     
     protected HashSet<Thread> threadSet;
     protected HashMap<Integer, String> idToLocationMap = null;
     protected HashMap<String, Integer> locationToIdMap = null;
-    protected S state;
+    protected State state;
 
     protected ArrayList<Integer> pattern = new ArrayList<>();
 
     public boolean partition = false;
-    protected long startTimeAnalysis = 0;
-    protected long start;
-    protected long end;
+    long startTimeAnalysis = 0;
+    long start;
+    long end;
 
-    public PatternEngine(ParserType pType, String trace_folder, String patternFileName) {
+    public PrefixEngine(ParserType pType, String trace_folder, String patternFileName, double prob) {
         super(pType);
-        
         try {
             Scanner myReader = new Scanner(new File(patternFileName));
             int cnt = 0;
@@ -61,9 +60,11 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         }
         eventCount = 0;
         totalSkippedEvents = 0;
+        handlerEvent = new PrefixEvent();
+        state = new State(threadSet, pattern, prob);
     }
 
-    protected boolean analyzeEvent(E handlerEvent, Long eventCount){
+    protected boolean analyzeEvent(PrefixEvent handlerEvent, Long eventCount){
 		boolean patternMatched = false;
 		try{
 			patternMatched = handlerEvent.Handle(state);
@@ -87,28 +88,32 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 		// postAnalysis();
     }
 
-    protected void analyzeTraceRR() {
+    private void analyzeTraceRR() {
         boolean flag = false;
         startTimeAnalysis = System.currentTimeMillis();
         long stopTimeAnalysis = 0;
-        while (rrParser.checkAndGetNext(handlerEvent)) {
-			eventCount = eventCount + 1;
-			boolean matched = analyzeEvent(handlerEvent, eventCount);
-            if (matched) {
-                stopTimeAnalysis = System.currentTimeMillis();
-                flag = true;
-                System.out.println("Pattern Matched on the first " + eventCount + " events");
+        while(rrParser.checkAndGetNext(handlerEvent)) {
+            eventCount = eventCount + 1;
+            if(eventCount >= start && eventCount <= end) {
+                boolean matched = analyzeEvent(handlerEvent, eventCount);
+                if (matched) {
+                    stopTimeAnalysis = System.currentTimeMillis();
+                    flag = true;
+                    System.out.println("Pattern Matched on the first " + eventCount + " events");
+                    break;
+                }
+                postHandleEvent(handlerEvent);
+            }
+            if(eventCount > end) {
                 break;
             }
-            postHandleEvent(handlerEvent);
-		}
+        }
         if(!flag) {
             stopTimeAnalysis = System.currentTimeMillis();
             System.out.println("Not matched");
         }
         long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
         System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds");
-        state.printMemory();
     }
 
     private void analyzeTraceSTD() {
@@ -150,13 +155,12 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         locationToIdMap = rrParser.locationToIdMap;
     }
 
-    protected boolean skipEvent(E handlerEvent) {
+    protected boolean skipEvent(PrefixEvent handlerEvent) {
         // return !handlerEvent.getType().isAccessType();
         return false;
     }
 
-	protected void postHandleEvent(E handlerEvent) {
+	protected void postHandleEvent(PrefixEvent handlerEvent) {
 
-    }
-
+    } 
 }

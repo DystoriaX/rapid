@@ -27,7 +27,7 @@ public class SyncPreservingRaceOfflineEngine extends RaceDetectionEngine<SyncPre
 			startTimeAnalysis = System.currentTimeMillis(); //System.nanoTime();
 		}	
 		OrderedVarsEngine orderedVarsEngine = new OrderedVarsEngine(pType, trace_folder, 0);
-		orderedVarsEngine.analyzeTrace(true, 0);
+		orderedVarsEngine.analyzeTrace(false, 0);
 		
 		if(time_reporting){
 			long stopTimeAnalysis = System.currentTimeMillis(); //System.nanoTime();

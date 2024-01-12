@@ -123,6 +123,19 @@
             <arg value="benchmark/bug-bench/jfreechart/test.rr" />
             <arg value="-m" />
             <arg value="benchmark/bug-bench/jfreechart/pattern" />
+            <arg value="-prob" />
+            <arg value="0.01" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="race" depends="build">
+        <java classname="RacePrefix" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/STD-Format/wronglock.std" />
+            <arg value="-prob" />
+            <arg value="10000000" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>
@@ -151,9 +164,9 @@
     <target name="generatePattern" depends="build">
         <java classname="PatternGeneration" fork="true">
             <arg value="-f" />
-            <arg value="std" />
+            <arg value="rr" />
             <arg value="-p" />
-            <arg value="benchmark/hedc/trace.std" />
+            <arg value="benchmark/zookeeper/TEST_test/trace.rr" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

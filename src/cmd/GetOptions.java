@@ -26,6 +26,7 @@ public class GetOptions {
 		options.addOption("p", "path", true, "the path to the trace file/folder (Required)");
 		options.addOption("v", "verbosity", true, "for setting verbosity: Allowed levels = 0, 1, 2 (Default : 0)");
         options.addOption("m", "excluded-methods", true, "path to file that lists methods to be excluded");
+		options.addOption("prob", "probability", true, "probability of ignoring an event in prefix");
 	}
 
 	public CmdOptions parse() {
@@ -69,6 +70,10 @@ public class GetOptions {
             if (cmd.hasOption("m")) {
                 cmdOpt.excludeList = cmd.getOptionValue("m") ;   
             }
+
+			if (cmd.hasOption("prob")) {
+				cmdOpt.prob = Double.parseDouble(cmd.getOptionValue("prob"));
+			}
 
 		} catch (ParseException e) {
 			help();

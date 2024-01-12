@@ -32,7 +32,9 @@ public class ParseRoadRunner {
 	public HashMap<String, Integer> locationToIdMap;
 	public HashMap<Integer, String> idToLocationMap;
 	public HashSet<String> excludedPatterns;
-	
+
+	public long start = 0, end = 0;
+
 	public ParseRoadRunner(String traceFile){
 		threadMap = new HashMap<String, Thread>();
 		lockMap = new HashMap<String, Lock>();
@@ -57,6 +59,34 @@ public class ParseRoadRunner {
 		parser = new Parse();
 		eInfo = new EventInfo();
 		line = null;
+	}
+	
+	public ParseRoadRunner(String traceFile, long start, long end){
+		threadMap = new HashMap<String, Thread>();
+		lockMap = new HashMap<String, Lock>();
+		variableMap = new HashMap<String, Variable>();
+		totThreads = 0;
+		totEvents = 0;
+		
+		locIdIndex = 0;
+		locationToIdMap = new HashMap<String, Integer> ();
+		idToLocationMap = new HashMap<>();
+
+		bufferedReader = null;
+		try{
+			bufferedReader = new BufferedReader(new FileReader(traceFile));
+		}
+		catch (FileNotFoundException ex) {
+			System.out.println("Unable to open file '" + traceFile + "'");
+		}
+		
+		excludedPatterns = new HashSet<String> ();
+		
+		parser = new Parse();
+		eInfo = new EventInfo();
+		line = null;
+		this.start = start;
+		this.end = end;
 	}
 
 	public ParseRoadRunner(String traceFile, String excludeFile){
@@ -108,6 +138,11 @@ public class ParseRoadRunner {
 		this(traceFile);
 		computeThreadsAndResetState(traceFile, computeThreadSetAPriori);
 	}
+
+	public ParseRoadRunner(String traceFile, boolean computeThreadSetAPriori, long start, long end){
+		this(traceFile, start, end);
+		computeThreadsAndResetState(traceFile, computeThreadSetAPriori);
+	}
 	
 	public ParseRoadRunner(String traceFile, String excludeFile, boolean computeThreadSetAPriori){
 		this(traceFile, excludeFile);
@@ -141,6 +176,9 @@ public class ParseRoadRunner {
 				variableMap.put(vname, new Variable(vname));
 			}
 			Variable v = variableMap.get(vname);
+			if(start <= end || (totEvents + 1 >= start && totEvents + 1 <= end)) {
+				v.touchedThreads.add(t);
+			}
 			e.updateEvent(totEvents, LID, ename, eInfo.type, t, null, v, null);
 		}
 
@@ -150,7 +188,9 @@ public class ParseRoadRunner {
 				variableMap.put(vname, new Variable(vname));
 			}
 			Variable v = variableMap.get(vname);
-
+			if(start <= end || (totEvents + 1 >= start && totEvents + 1 <= end)) {
+				v.touchedThreads.add(t);
+			}
 			e.updateEvent(totEvents, LID, ename, eInfo.type, t, null, v, null);
 		}
 
@@ -254,6 +294,7 @@ public class ParseRoadRunner {
 				// 	}
 				// }
 				if(!line.startsWith("@")) {
+					// System.out.println(line);
 					shouldExclude = true;
 				}
 				if(!shouldExclude) {
