@@ -133,9 +133,9 @@
             <arg value="-f" />
             <arg value="std" />
             <arg value="-p" />
-            <arg value="benchmark/STD-Format/wronglock.std" />
+            <arg value="benchmark/STD-Format/cryptorsa.std" />
             <arg value="-prob" />
-            <arg value="10000000" />
+            <arg value="1000" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>

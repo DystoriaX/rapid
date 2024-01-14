@@ -18,7 +18,6 @@ public class PrefixEvent extends VectorClockEvent {
         if(threadLocal) {
             return false;
         }
-        // System.out.println(state.states.size());
         for(Iterator<DependentInfo> iterator = state.states.iterator(); iterator.hasNext();){
             DependentInfo dep = iterator.next(); 
             
@@ -27,35 +26,32 @@ public class PrefixEvent extends VectorClockEvent {
                 continue;
             }
             
-            if(mustIgnore(dep)) {
-                if(this.getType().isRead() && !dep.check_dependency(this.thread)) {
-                    if(dep.addReadCandidates(this.getThread(), this.getVariable())) {
-                        state.racy = true;
-                    }
+            if(this.getType().isAccessType() && !dep.check_dependency(this.thread)) {
+                if((this.getType().isRead() && dep.checkReadCandidate(this.getVariable())) || (this.getType().isWrite() && dep.checkWriteCandidate(this.getVariable()))) {
+                    state.racy = true;
                 }
+            }
+            
+            if(mustIgnore(dep)) {
                 ignore(dep, state);
                 if(dep.allThreads(state.tSet.size())) {
                     iterator.remove();
                 }
             }
             else {
-                if(this.getType().isAccessType() || !dep.wr_candidates.isEmpty() || !dep.rd_candidates.isEmpty() ) {
+                if((this.getType().isAccessType() && dep.birth == 0) || (this.getType().isAcquire() && dep.birth > 0)) {
                     DependentInfo dep_new = (DependentInfo) PipedDeepCopy.copy(dep);
                     if(this.getType().isAccessType()) {
                         if(this.getType().isRead()) {
-                            if(dep_new.addReadCandidates(this.getThread(), this.getVariable())) {
-                                state.racy = true;
-                            }
+                            dep_new.addReadCandidate(this.getVariable());
                         }
                         else {
-                            if(dep_new.addWriteCandidates(this.getThread(), this.getVariable())) {
-                                state.racy = true;
-                            }
+                            dep_new.addWriteCandidate(this.getVariable());
                         }
+                        dep_new.birth = state.timestamp;
                     }
                     ignore(dep_new, state);
                     if(!dep_new.allThreads(state.tSet.size())) {
-                        dep_new.birth = state.timestamp;
                         newStates.add(dep_new);
                     }
                 }
@@ -71,13 +67,11 @@ public class PrefixEvent extends VectorClockEvent {
                 }
             }
         }
-
         state.states.addAll(newStates);
         if(state.racy) {
             state.raceCnt++;
         }
         state.racy = false;
-        state.printMemory();
 		return matched;
 	}
 

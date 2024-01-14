@@ -76,9 +76,9 @@ public class PrefixEngine extends Engine<PrefixEvent> {
         long stopTimeAnalysis = 0;
         while(stdParser.hasNext()){
 			eventCount = eventCount + 1;
-            System.out.println(eventCount);
 			stdParser.getNextEvent(handlerEvent);
             analyzeEvent(handlerEvent, eventCount);
+            // System.out.println(eventCount + " " + state.raceCnt);
             postHandleEvent(handlerEvent);
         }
         stopTimeAnalysis = System.currentTimeMillis();
