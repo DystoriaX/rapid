@@ -90,13 +90,10 @@ public class PrefixEngine extends Engine<PrefixEvent> {
             try{
                 if(handlerEvent.Handle(state)) {
                     racyevents.add(eventCount);
-                    
                 }
                 if(last_events_thread.containsKey(eventCount)) {
                     state.forget(last_events_thread.get(eventCount));
                 }
-                if(eventCount % 10000 == 0)
-                    System.out.println(eventCount + " " + racyevents.size());
             }
             catch(OutOfMemoryError oome){
                 System.err.println("Number of events = " + Long.toString(eventCount));

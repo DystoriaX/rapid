@@ -104,7 +104,7 @@ class DependentInfo implements Serializable {
         return candidate_var != null && var.getId() == candidate_var.getId();
     }
 
-    public void addReadCandidate( Variable var) {
+    public void addReadCandidate(Variable var) {
         candidate_var = var;
         is_read_candidate = true;
     }

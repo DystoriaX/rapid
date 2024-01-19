@@ -133,9 +133,9 @@
             <arg value="-f" />
             <arg value="std" />
             <arg value="-p" />
-            <arg value="benchmark/STD-Format/clean.std" />
-            <!-- <arg value="-prob" />
-            <arg value="5000" /> -->
+            <arg value="benchmark/STD-Format/bubblesort.std" />
+            <arg value="-prob" />
+            <arg value="1000" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>
