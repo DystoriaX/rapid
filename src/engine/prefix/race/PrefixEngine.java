@@ -1,5 +1,8 @@
 package engine.prefix.race;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -17,30 +20,37 @@ public class PrefixEngine extends Engine<PrefixEvent> {
     protected HashMap<Integer, String> idToLocationMap = null;
     protected HashMap<String, Integer> locationToIdMap = null;
     protected State state;
+    protected String sourceFile;
+
+    HashSet<Long> racyevents = new HashSet<>();
 
     public boolean partition = false;
     long startTimeAnalysis = 0;
-    long start;
-    long end;
+
+    HashMap<Thread, Long> thread_last_events = new HashMap<>();
+    HashMap<Long, Thread> last_events_thread = new HashMap<>();
 
     public PrefixEngine(ParserType pType, String trace_folder, double prob) {
         super(pType);
+        sourceFile = trace_folder;
         eventCount = 0;
         totalSkippedEvents = 0;
         this.initializeReader(trace_folder);
         handlerEvent = new PrefixEvent();
+        for(Thread t: threadSet) {
+            thread_last_events.put(t, (long)0);
+        }
+        filterTraceSTD();
+        for(Thread t: threadSet) {
+            last_events_thread.put(thread_last_events.get(t), t);
+        }
+        eventCount = 0;
+        resetSTDParser();
         state = new State(threadSet, prob);
     }
 
     protected void analyzeEvent(PrefixEvent handlerEvent, Long eventCount){
-		try{
-			handlerEvent.Handle(state);
-		}
-		catch(OutOfMemoryError oome){
-			System.err.println("Number of events = " + Long.toString(eventCount));
-			state.printMemory();
-            oome.printStackTrace();
-		}
+		
 	}
 
     public void analyzeTrace() {
@@ -75,16 +85,40 @@ public class PrefixEngine extends Engine<PrefixEvent> {
         startTimeAnalysis = System.currentTimeMillis();
         long stopTimeAnalysis = 0;
         while(stdParser.hasNext()){
-			eventCount = eventCount + 1;
-			stdParser.getNextEvent(handlerEvent);
-            analyzeEvent(handlerEvent, eventCount);
-            // System.out.println(eventCount + " " + state.raceCnt);
+            eventCount = eventCount + 1;
+            stdParser.getNextEvent(handlerEvent);
+            try{
+                if(handlerEvent.Handle(state)) {
+                    racyevents.add(eventCount);
+                    
+                }
+                if(last_events_thread.containsKey(eventCount)) {
+                    state.forget(last_events_thread.get(eventCount));
+                }
+                if(eventCount % 10000 == 0)
+                    System.out.println(eventCount + " " + racyevents.size());
+            }
+            catch(OutOfMemoryError oome){
+                System.err.println("Number of events = " + Long.toString(eventCount));
+                state.printMemory();
+                oome.printStackTrace();
+            }
             postHandleEvent(handlerEvent);
         }
         stopTimeAnalysis = System.currentTimeMillis();
         long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
+        System.out.println("Number of racy events = " + racyevents.size());
         System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds");
         state.printMemory();
+    }
+
+    private void filterTraceSTD() {
+        while(stdParser.hasNext()){
+			eventCount = eventCount + 1;
+			stdParser.getNextEvent(handlerEvent);
+            thread_last_events.put(handlerEvent.getThread(), eventCount);
+            postHandleEvent(handlerEvent);
+        }
     }
 
     protected void initializeReaderRV(String trace_folder) {
@@ -101,10 +135,20 @@ public class PrefixEngine extends Engine<PrefixEvent> {
     }
 
 	protected void initializeReaderRR(String trace_file) {
-        rrParser = new ParseRoadRunner(trace_file, true, start, end);
+        rrParser = new ParseRoadRunner(trace_file, true);
         threadSet = rrParser.getThreadSet();
         idToLocationMap = rrParser.idToLocationMap;
         locationToIdMap = rrParser.locationToIdMap;
+    }
+
+    protected void resetSTDParser() {
+        stdParser.totEvents = 0;
+        try{
+            stdParser.bufferedReader = new BufferedReader(new FileReader(sourceFile));
+        }
+        catch (FileNotFoundException ex) {
+            System.out.println("Unable to open file '" + sourceFile + "'");
+        }
     }
 
     protected boolean skipEvent(PrefixEvent handlerEvent) {

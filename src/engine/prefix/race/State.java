@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import event.Lock;
 import event.Thread;
@@ -11,11 +12,12 @@ import event.Variable;
 
 public class State {
     public ArrayList<DependentInfo> states = new ArrayList<>(); 
-    HashSet<Thread> tSet;
+    public HashSet<Thread> tSet;
     public int raceCnt = 0;
     public boolean racy = false;
     double prob;
     public long timestamp;
+    public HashSet<Integer> racyLocs = new HashSet<>();
 
     public State(HashSet<Thread> tSet, double prob) {
         states.add(new DependentInfo());
@@ -23,25 +25,33 @@ public class State {
         this.prob = prob;
     };
 
+    public void reset() {
+        states.clear();
+        states.add(new DependentInfo());
+    }
+
+    public void forget(Thread thread) {
+        for(Iterator<DependentInfo> iterator = states.iterator(); iterator.hasNext();){
+            DependentInfo dep = iterator.next(); 
+            dep.add(thread);
+            
+            if(dep.allThreads(tSet.size())) {
+                iterator.remove();
+            }
+        }
+    }
+
     public void printMemory() {
-        System.out.println(raceCnt);
-        // System.out.println(states.size());
     }
 }
 
 class DependentInfo implements Serializable {
-    HashSet<Thread> tSet = new HashSet<>();
-    HashSet<Variable> wr_vars = new HashSet<>();
-    HashSet<Lock> rel_locks = new HashSet<>();
+    HashSet<Integer> tSet = new HashSet<>();
+    HashSet<Integer> wr_vars = new HashSet<>();
+    HashSet<Integer> rel_locks = new HashSet<>();
 
     Variable candidate_var;
     boolean is_read_candidate;
-
-    HashSet<Variable> wr_candidates = new HashSet<>();
-    HashSet<Variable> rd_candidates = new HashSet<>();
-
-    HashMap<Variable, HashSet<Thread>> wr_var_to_thread = new HashMap<>();
-    HashMap<Variable, HashSet<Thread>> rd_var_to_thread = new HashMap<>(); 
 
     public long birth = 0;
 
@@ -50,15 +60,15 @@ class DependentInfo implements Serializable {
     }
 
     public boolean check_dependency(Thread t) {
-        return tSet.contains(t);
+        return tSet.contains(t.getId());
     }
 
     public boolean check_dependency(Variable v) {
-        return wr_vars.contains(v);
+        return wr_vars.contains(v.getId());
     }
 
     public boolean check_dependency(Lock l) {
-        return rel_locks.contains(l);
+        return rel_locks.contains(l.getId());
     }
 
     public boolean tSetEmpty() {
@@ -66,36 +76,26 @@ class DependentInfo implements Serializable {
     }
 
     public void add(Thread t) {
-        tSet.add(t);
+        tSet.add(t.getId());
     }
 
     public void add(Variable v) {
-        wr_vars.add(v);
+        wr_vars.add(v.getId());
     }
 
     public void add(Lock l) {
-        rel_locks.add(l);
+        rel_locks.add(l.getId());
     }
 
     public void remove(Variable v) {
-        wr_vars.remove(v);
+        wr_vars.remove(v.getId());
     }
 
     public void remove(Lock l) {
-        rel_locks.remove(l);
+        rel_locks.remove(l.getId());
     }
     
     public void addWriteCandidate(Variable var) {
-        // boolean race = false;
-        // if(rd_candidates.contains(var) || wr_candidates.contains(var)) {
-        //     race = true;
-        // }
-        // wr_candidates.add(var);
-        // if(!wr_var_to_thread.containsKey(var)) {
-        //     wr_var_to_thread.put(var, new HashSet<>());
-        // }
-        // wr_var_to_thread.get(var).add(t);
-        // return race;
         candidate_var = var;
         is_read_candidate = false;
     }
@@ -105,16 +105,6 @@ class DependentInfo implements Serializable {
     }
 
     public void addReadCandidate( Variable var) {
-        // boolean race = false;
-        // if(wr_candidates.contains(var)) {
-        //     race = true;
-        // }
-        // rd_candidates.add(var);        
-        // if(!rd_var_to_thread.containsKey(var)) {
-        //     rd_var_to_thread.put(var, new HashSet<>());
-        // }
-        // rd_var_to_thread.get(var).add(t);
-        // return race;
         candidate_var = var;
         is_read_candidate = true;
     }
@@ -123,23 +113,4 @@ class DependentInfo implements Serializable {
         return candidate_var != null && var.getId() == candidate_var.getId() && !is_read_candidate;
     }
 
-    // public void removeRdCandidate(Thread t, Variable var) {
-    //     if(rd_var_to_thread.containsKey(var)) {
-    //         rd_var_to_thread.get(var).remove(t);
-    //         if(rd_var_to_thread.get(var).isEmpty()) {
-    //             rd_var_to_thread.remove(var);
-    //             rd_candidates.remove(var);
-    //         }
-    //     }
-    // }
-
-    // public void removeWrCandidate(Thread t, Variable var) {
-    //     if(wr_var_to_thread.containsKey(var)) {
-    //         wr_var_to_thread.get(var).remove(t);
-    //         if(wr_var_to_thread.get(var).isEmpty()) {
-    //             wr_var_to_thread.remove(var);
-    //             wr_candidates.remove(var);
-    //         }
-    //     }
-    // }
 }

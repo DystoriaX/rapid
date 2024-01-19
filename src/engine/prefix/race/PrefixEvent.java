@@ -21,12 +21,12 @@ public class PrefixEvent extends VectorClockEvent {
         for(Iterator<DependentInfo> iterator = state.states.iterator(); iterator.hasNext();){
             DependentInfo dep = iterator.next(); 
             
-            if(dep.birth > 0 && state.timestamp - dep.birth >= state.prob) {
-                iterator.remove();
-                continue;
-            }
+            // if(dep.birth > 0 && state.timestamp - dep.birth >= state.prob && Math.random() <= 1) {
+            //     iterator.remove();
+            //     continue;
+            // }
             
-            if(this.getType().isAccessType() && !dep.check_dependency(this.thread)) {
+            if(!state.racy && dep.birth != 0 && this.getType().isAccessType() && !dep.check_dependency(this.thread)) {
                 if((this.getType().isRead() && dep.checkReadCandidate(this.getVariable())) || (this.getType().isWrite() && dep.checkWriteCandidate(this.getVariable()))) {
                     state.racy = true;
                 }
@@ -39,7 +39,7 @@ public class PrefixEvent extends VectorClockEvent {
                 }
             }
             else {
-                if((this.getType().isAccessType() && dep.birth == 0) || (this.getType().isAcquire() && dep.birth > 0)) {
+                if(((dep.birth == 0 && this.getType().isAccessType()) || (dep.birth > 0 && this.getType().isAcquire()))) {
                     DependentInfo dep_new = (DependentInfo) PipedDeepCopy.copy(dep);
                     if(this.getType().isAccessType()) {
                         if(this.getType().isRead()) {
@@ -70,6 +70,7 @@ public class PrefixEvent extends VectorClockEvent {
         state.states.addAll(newStates);
         if(state.racy) {
             state.raceCnt++;
+            matched = true;
         }
         state.racy = false;
 		return matched;

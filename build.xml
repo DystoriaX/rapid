@@ -133,9 +133,20 @@
             <arg value="-f" />
             <arg value="std" />
             <arg value="-p" />
-            <arg value="benchmark/STD-Format/cryptorsa.std" />
+            <arg value="benchmark/STD-Format/clean.std" />
+            <!-- <arg value="-prob" />
+            <arg value="5000" /> -->
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="race1" depends="build">
+        <java classname="SyncPreserving" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/STD-Format/clean.std" />
             <arg value="-prob" />
-            <arg value="1000" />
+            <arg value="100000000" />
             <classpath refid="rapid.classpath" />
         </java>
     </target>
