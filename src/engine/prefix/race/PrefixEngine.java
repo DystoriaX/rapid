@@ -44,6 +44,7 @@ public class PrefixEngine extends Engine<PrefixEvent> {
         for(Thread t: threadSet) {
             last_events_thread.put(thread_last_events.get(t), t);
         }
+        // System.out.println(last_events_thread);
         eventCount = 0;
         resetSTDParser();
         state = new State(threadSet, prob);
@@ -100,13 +101,14 @@ public class PrefixEngine extends Engine<PrefixEvent> {
                 state.printMemory();
                 oome.printStackTrace();
             }
+            // System.out.println(eventCount + " " + state.raceCnt + " " + state.states.size() + " " + state.tSet.size());
             postHandleEvent(handlerEvent);
         }
         stopTimeAnalysis = System.currentTimeMillis();
         long timeAnalysis = stopTimeAnalysis - startTimeAnalysis;
         System.out.println("Number of racy events = " + racyevents.size());
         System.out.println("Time for full analysis = " + timeAnalysis + " milliseconds");
-        state.printMemory();
+        // state.printMemory();
     }
 
     private void filterTraceSTD() {
@@ -114,6 +116,9 @@ public class PrefixEngine extends Engine<PrefixEvent> {
 			eventCount = eventCount + 1;
 			stdParser.getNextEvent(handlerEvent);
             thread_last_events.put(handlerEvent.getThread(), eventCount);
+            if(handlerEvent.getType().isJoin()) {
+                thread_last_events.put(handlerEvent.getTarget(), eventCount);
+            }
             postHandleEvent(handlerEvent);
         }
     }

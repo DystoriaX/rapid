@@ -20,7 +20,6 @@ public class PrefixEvent extends VectorClockEvent {
         }
         for(Iterator<DependentInfo> iterator = state.states.iterator(); iterator.hasNext();){
             DependentInfo dep = iterator.next(); 
-            
             if(dep.birth > 0 && state.timestamp - dep.birth >= state.prob) {
                 iterator.remove();
                 continue;

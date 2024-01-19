@@ -42,6 +42,11 @@ public class State {
     }
 
     public void printMemory() {
+        for(DependentInfo dep: states) {
+            if(dep.birth == 0) {
+                System.out.println(dep.tSet.size());
+            }
+        }
     }
 }
 
