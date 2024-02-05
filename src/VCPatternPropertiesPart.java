@@ -1,6 +1,6 @@
 import cmd.CmdOptions;
 import cmd.GetOptions;
-import engine.pattern.Vectorclock.VectorClockEngine;
+import engine.pattern.PatternTrack.VectorClockEngine;
 
 public class VCPatternPropertiesPart {
     public static void main(String[] args) {		

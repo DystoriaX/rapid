@@ -1,40 +1,40 @@
-package engine.pattern.Vectorclock;
+package engine.pattern.PatternTrackConsumer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.function.Consumer;
 
 import org.javatuples.Pair;
 
 import engine.pattern.State;
+import engine.pattern.PatternTrack.VectorClockState;
 import event.Thread;
+import event.Event;
 import event.Lock;
 import event.Variable;
 import util.vectorclock.VectorClock;
 
-public class VectorClockState extends State {
-    private HashMap<Thread, Integer> threadToIndex = new HashMap<>();
+public class Monitor implements Consumer<Event> {
+    private HashMap<Thread, Integer> processToIndex = new HashMap<>();
     public HashMap<ArrayList<Pair<Thread, Integer>> , ArrayList<VectorClock>> currentState = new HashMap<>();
     public HashMap<Integer, HashSet<Integer>> pattern = new HashMap<>();
 
-    private int numThreads;
+    private int numProcesses;
     private int k;
 
-    private HashMap<Thread, VectorClock> threadClock = new HashMap<>();
-    private HashMap<Variable, VectorClock> readClock = new HashMap<>();
-    private HashMap<Variable, VectorClock> writeClock = new HashMap<>();
-    private HashMap<Lock, VectorClock> lockClock = new HashMap<>();
+    private HashMap<Thread, VectorClock> processClock = new HashMap<>();
 
-    public VectorClockState(HashSet<Thread> tSet, ArrayList<Integer> pattern) {
-        numThreads = tSet.size();
+    public Monitor(HashSet<Thread> tSet, ArrayList<Integer> pattern) {
+        numProcesses = tSet.size();
         Iterator<Thread> itThread = tSet.iterator();
         int index = 0;
         while(itThread.hasNext()) {
             Thread thr = itThread.next();
-            threadToIndex.put(thr, index);
+            processToIndex.put(thr, index);
             index++;
-            threadClock.put(thr, emptyClock());
+            processClock.put(thr, emptyClock());
         }
         currentState.put(new ArrayList<>(), new ArrayList<>());
         int cnt = 0;
@@ -47,37 +47,28 @@ public class VectorClockState extends State {
         this.k = pattern.size();
     }
 
+    public void accept(Event event) {
+        updateVectorClock(event);
+
+        extendWitness(event.getLocId(), event.getThread(), new VectorClock(getThreadClock(event.getThread())));
+    }
+
+    private void updateVectorClock(Event event){
+        if(event.getType().isSend()) HandleSend(event);
+        if(event.getType().isReceive()) HandleReceive(event);
+    }
+
+
     public VectorClock emptyClock() {
-        return new VectorClock(numThreads);
+        return new VectorClock(numProcesses);
     }
 
     public VectorClock getThreadClock(Thread t) {
-        return threadClock.get(t);
-    }
-
-    public VectorClock getReadClock(Variable v) {
-        if(!readClock.containsKey(v)) {
-            readClock.put(v, emptyClock());
-        }
-        return readClock.get(v);
-    }
-
-    public VectorClock getWriteClock(Variable v) {
-        if(!writeClock.containsKey(v)) {
-            writeClock.put(v, emptyClock());
-        }
-        return writeClock.get(v);
-    }
-
-    public VectorClock getLockClock(Lock l) {
-        if(!lockClock.containsKey(l)) {
-            lockClock.put(l, emptyClock());
-        }
-        return lockClock.get(l);
+        return processClock.get(t);
     }
 
     public int getThreadIndex(Thread thread) {
-        return threadToIndex.get(thread);
+        return processToIndex.get(thread);
     }
 
     public boolean extendWitness(int locId, Thread thread, VectorClock vc) {
@@ -119,11 +110,6 @@ public class VectorClockState extends State {
                 }
         }
         return true;
-    }
-
-    public void printMemory() {
-        // for(Thread t: threadClock.keySet())
-        //     System.out.println(threadClock.get(t));
     }
 }
 

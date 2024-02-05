@@ -3,7 +3,7 @@ package engine.prefix.race;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import engine.pattern.Vectorclock.VectorClockEvent;
+import engine.pattern.PatternTrack.VectorClockEvent;
 import util.PipedDeepCopy;
 
 public class PrefixEvent extends VectorClockEvent {

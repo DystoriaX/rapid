@@ -5,8 +5,8 @@ import java.util.Iterator;
 
 import org.javatuples.Pair;
 
-import engine.pattern.Vectorclock.VectorClockEvent;
-import engine.pattern.Vectorclock.VectorClockState;
+import engine.pattern.PatternTrack.VectorClockEvent;
+import engine.pattern.PatternTrack.VectorClockState;
 import util.PipedDeepCopy;
 
 public class PrefixEvent extends VectorClockEvent {

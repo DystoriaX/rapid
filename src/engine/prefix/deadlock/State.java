@@ -6,10 +6,10 @@ import java.util.HashSet;
 
 import org.javatuples.Pair;
 
+import engine.pattern.PatternTrack.VectorClockState;
 import event.Lock;
 import event.Thread;
 import event.Variable;
-import engine.pattern.Vectorclock.VectorClockState;
 
 public class State {
     public ArrayList<Pair<VectorClockState, DependentInfo>> states = new ArrayList<>(); 
