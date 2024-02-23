@@ -8,6 +8,6 @@ public class BertoniEngine extends PatternEngine<BertoniState, BertoniEvent> {
     public BertoniEngine(ParserType pType, String trace_folder, String patternFile) {
         super(pType, trace_folder, patternFile);
         handlerEvent = new BertoniEvent();
-        state = new BertoniState(threadSet, pattern);
+        state = new BertoniState(threadSet, patterns.get(0));
     }
 }

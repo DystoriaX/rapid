@@ -32,7 +32,8 @@ public class Trie<T> {
       return children.get(value);
     }
 
-    public void addChild(T value, Node node) {
+    public void addChild(T value) {
+      Node node = new Node();
       children.put(value, node);
     }
 
@@ -56,7 +57,7 @@ public class Trie<T> {
 
     for (T element : list) {
       if (!current.hasChild(element)) {
-        current.addChild(element, current);
+        current.addChild(element);
       }
 
       current = current.getChild(element);

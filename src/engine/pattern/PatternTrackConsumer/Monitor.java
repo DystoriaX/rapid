@@ -18,7 +18,7 @@ import util.vectorclock.VectorClock;
 
 public class Monitor implements Consumer<Event> {
     private HashMap<Thread, Integer> processToIndex = new HashMap<>();
-    public HashMap<ArrayList<Pair<Thread, Integer>> , ArrayList<VectorClock>> currentState = new HashMap<>();
+    public HashMap<ArrayList<Pair<Thread, Integer>>, ArrayList<VectorClock>> currentState = new HashMap<>();
     public HashMap<Integer, HashSet<Integer>> pattern = new HashMap<>();
 
     private int numProcesses;
@@ -30,7 +30,7 @@ public class Monitor implements Consumer<Event> {
         numProcesses = tSet.size();
         Iterator<Thread> itThread = tSet.iterator();
         int index = 0;
-        while(itThread.hasNext()) {
+        while (itThread.hasNext()) {
             Thread thr = itThread.next();
             processToIndex.put(thr, index);
             index++;
@@ -38,8 +38,8 @@ public class Monitor implements Consumer<Event> {
         }
         currentState.put(new ArrayList<>(), new ArrayList<>());
         int cnt = 0;
-        for(int p : pattern) {
-            if(!this.pattern.containsKey(p)) {
+        for (int p : pattern) {
+            if (!this.pattern.containsKey(p)) {
                 this.pattern.put(p, new HashSet<Integer>());
             }
             this.pattern.get(p).add(cnt++);
@@ -53,11 +53,10 @@ public class Monitor implements Consumer<Event> {
         extendWitness(event.getLocId(), event.getThread(), new VectorClock(getThreadClock(event.getThread())));
     }
 
-    private void updateVectorClock(Event event){
-        if(event.getType().isSend()) HandleSend(event);
-        if(event.getType().isReceive()) HandleReceive(event);
+    private void updateVectorClock(Event event) {
+        // if(event.getType().isSend()) HandleSend(event);
+        // if(event.getType().isReceive()) HandleReceive(event);
     }
-
 
     public VectorClock emptyClock() {
         return new VectorClock(numProcesses);
@@ -72,12 +71,12 @@ public class Monitor implements Consumer<Event> {
     }
 
     public boolean extendWitness(int locId, Thread thread, VectorClock vc) {
-        if(pattern.containsKey(locId)) {
-            HashMap<ArrayList<Pair<Thread, Integer>> , ArrayList<VectorClock>> newStates = new HashMap<>();
+        if (pattern.containsKey(locId)) {
+            HashMap<ArrayList<Pair<Thread, Integer>>, ArrayList<VectorClock>> newStates = new HashMap<>();
             for (int index : pattern.get(locId)) {
-                for(ArrayList<Pair<Thread, Integer>> witness: currentState.keySet()) {
-                    if(witnesses(index, vc, witness, currentState.get(witness))) {
-                        if(witness.size() == k - 1) {
+                for (ArrayList<Pair<Thread, Integer>> witness : currentState.keySet()) {
+                    if (witnesses(index, vc, witness, currentState.get(witness))) {
+                        if (witness.size() == k - 1) {
                             return true;
                         }
                         ArrayList<Pair<Thread, Integer>> extendedWitness = new ArrayList<>();
@@ -95,21 +94,21 @@ public class Monitor implements Consumer<Event> {
         return false;
     }
 
-    private boolean witnesses(int index, VectorClock vc, ArrayList<Pair<Thread, Integer>> witness, ArrayList<VectorClock> timestamps) {
+    private boolean witnesses(int index, VectorClock vc, ArrayList<Pair<Thread, Integer>> witness,
+            ArrayList<VectorClock> timestamps) {
         Iterator<Pair<Thread, Integer>> itWitness = witness.iterator();
         Iterator<VectorClock> itTimestamp = timestamps.iterator();
-        while(itWitness.hasNext()) {
+        while (itWitness.hasNext()) {
             Pair<Thread, Integer> event2 = itWitness.next();
-            if(event2.getValue1() == index) {
+            if (event2.getValue1() == index) {
                 return false;
             }
             VectorClock timeStamp = itTimestamp.next();
-            if(event2.getValue1() > index &&
-                timeStamp.isLessThanOrEqual(vc)) {
-                    return false;
-                }
+            if (event2.getValue1() > index &&
+                    timeStamp.isLessThanOrEqual(vc)) {
+                return false;
+            }
         }
         return true;
     }
 }
-

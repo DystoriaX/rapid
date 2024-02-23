@@ -181,4 +181,26 @@
             <classpath refid="rapid.classpath" />
         </java>
     </target>
+    <target name="vc" depends="build">
+        <java classname="VCPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <arg value="-m" />
+            <arg value="benchmark/hedc/pattern" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="ovc" depends="build">
+        <java classname="OptimizedVCPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/custom/trace.std" />
+            <arg value="-m" />
+            <arg value="benchmark/custom/pattern" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
 </project>

@@ -5,7 +5,10 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import engine.Engine;
 import event.Thread;
@@ -16,13 +19,13 @@ import parse.std.ParseStandard;
 public class PatternEngine<S extends State, E extends PatternEvent<S>> extends Engine<E> {
     protected long eventCount;
     protected long totalSkippedEvents;
-    
+
     protected HashSet<Thread> threadSet;
     protected HashMap<Integer, String> idToLocationMap = null;
     protected HashMap<String, Integer> locationToIdMap = null;
     protected S state;
 
-    protected ArrayList<Integer> pattern = new ArrayList<>();
+    protected ArrayList<ArrayList<Integer>> patterns = new ArrayList<>();
 
     public boolean partition = false;
     protected long startTimeAnalysis = 0;
@@ -31,29 +34,18 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 
     public PatternEngine(ParserType pType, String trace_folder, String patternFileName) {
         super(pType);
-        
+
         try {
             Scanner myReader = new Scanner(new File(patternFileName));
-            int cnt = 0;
+
+            this.initializeReader(trace_folder);
             while (myReader.hasNextLine()) {
-                cnt += 1;
-                String loc = myReader.nextLine();
-                if(cnt == 1) {
-                    start = Integer.valueOf(loc);
-                }
-                else if (cnt == 2) {
-                    end = Integer.valueOf(loc);
-                    this.initializeReader(trace_folder);
-                }
-                else {
-                    if(locationToIdMap != null){
-                        pattern.add(locationToIdMap.get(loc));
-                    }
-                    else {
-                        pattern.add(Integer.parseInt(loc));
-                    }
-                }
+                String line = myReader.nextLine();
+                List<Integer> pattern = Stream.of(line.split(",")).map(Integer::valueOf).collect(Collectors.toList());
+
+                patterns.add(new ArrayList<>(pattern));
             }
+
             myReader.close();
         } catch (FileNotFoundException e) {
             System.out.println("An error occurred.");
@@ -63,28 +55,28 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         totalSkippedEvents = 0;
     }
 
-    protected boolean analyzeEvent(E handlerEvent, Long eventCount){
-		boolean patternMatched = false;
-		try{
-			patternMatched = handlerEvent.Handle(state);
-		}
-		catch(OutOfMemoryError oome){
-			System.err.println("Number of events = " + Long.toString(eventCount));
-			state.printMemory();
+    protected boolean analyzeEvent(E handlerEvent, Long eventCount) {
+        boolean patternMatched = false;
+        System.out.println(handlerEvent.getLocId());
+        try {
+            patternMatched = handlerEvent.Handle(state);
+        } catch (OutOfMemoryError oome) {
+            System.err.println("Number of events = " + Long.toString(eventCount));
+            state.printMemory();
             oome.printStackTrace();
-		}
-		return patternMatched;
-	}
+        }
+        return patternMatched;
+    }
 
     public void analyzeTrace() {
-		if (this.parserType.isRR()) {
-			analyzeTraceRR();
-		}
+        if (this.parserType.isRR()) {
+            analyzeTraceRR();
+        }
         if (this.parserType.isSTD()) {
-			analyzeTraceSTD();
-		}
-		printCompletionStatus();
-		// postAnalysis();
+            analyzeTraceSTD();
+        }
+        printCompletionStatus();
+        // postAnalysis();
     }
 
     protected void analyzeTraceRR() {
@@ -92,8 +84,8 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         startTimeAnalysis = System.currentTimeMillis();
         long stopTimeAnalysis = 0;
         while (rrParser.checkAndGetNext(handlerEvent)) {
-			eventCount = eventCount + 1;
-			boolean matched = analyzeEvent(handlerEvent, eventCount);
+            eventCount = eventCount + 1;
+            boolean matched = analyzeEvent(handlerEvent, eventCount);
             if (matched) {
                 stopTimeAnalysis = System.currentTimeMillis();
                 flag = true;
@@ -101,8 +93,8 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
                 break;
             }
             postHandleEvent(handlerEvent);
-		}
-        if(!flag) {
+        }
+        if (!flag) {
             stopTimeAnalysis = System.currentTimeMillis();
             System.out.println("Not matched");
         }
@@ -113,9 +105,9 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 
     private void analyzeTraceSTD() {
         boolean flag = false;
-        while(stdParser.hasNext()){
-			eventCount = eventCount + 1;
-			stdParser.getNextEvent(handlerEvent);
+        while (stdParser.hasNext()) {
+            eventCount = eventCount + 1;
+            stdParser.getNextEvent(handlerEvent);
             boolean matched = analyzeEvent(handlerEvent, eventCount);
             if (matched) {
                 flag = true;
@@ -124,7 +116,7 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
             }
             postHandleEvent(handlerEvent);
         }
-        if(!flag) {
+        if (!flag) {
             System.out.println("Not matched");
         }
         state.printMemory();
@@ -134,16 +126,16 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 
     }
 
-	protected void initializeReaderCSV(String trace_file) {
+    protected void initializeReaderCSV(String trace_file) {
 
     }
 
-	protected void initializeReaderSTD(String trace_file) {
+    protected void initializeReaderSTD(String trace_file) {
         stdParser = new ParseStandard(trace_file, true);
-		threadSet = stdParser.getThreadSet();
+        threadSet = stdParser.getThreadSet();
     }
 
-	protected void initializeReaderRR(String trace_file) {
+    protected void initializeReaderRR(String trace_file) {
         rrParser = new ParseRoadRunner(trace_file, true, start, end);
         threadSet = rrParser.getThreadSet();
         idToLocationMap = rrParser.idToLocationMap;
@@ -155,7 +147,7 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
         return false;
     }
 
-	protected void postHandleEvent(E handlerEvent) {
+    protected void postHandleEvent(E handlerEvent) {
 
     }
 

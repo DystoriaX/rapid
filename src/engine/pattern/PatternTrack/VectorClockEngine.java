@@ -8,7 +8,7 @@ public class VectorClockEngine extends PatternEngine<VectorClockState, VectorClo
     public VectorClockEngine(ParserType pType, String trace_folder, String patternFile) {
         super(pType, trace_folder, patternFile);
         handlerEvent = new VectorClockEvent();
-        state = new VectorClockState(threadSet, pattern);
+        state = new VectorClockState(threadSet, patterns.get(0));
     }
 
     @Override
@@ -16,9 +16,9 @@ public class VectorClockEngine extends PatternEngine<VectorClockState, VectorClo
         boolean flag = false;
         startTimeAnalysis = System.currentTimeMillis();
         long stopTimeAnalysis = 0;
-        while(rrParser.checkAndGetNext(handlerEvent)) {
+        while (rrParser.checkAndGetNext(handlerEvent)) {
             eventCount = eventCount + 1;
-            if(eventCount >= start && eventCount <= end) {
+            if (eventCount >= start && eventCount <= end) {
                 boolean matched = analyzeEvent(handlerEvent, eventCount);
                 if (matched) {
                     stopTimeAnalysis = System.currentTimeMillis();
@@ -28,11 +28,11 @@ public class VectorClockEngine extends PatternEngine<VectorClockState, VectorClo
                 }
                 postHandleEvent(handlerEvent);
             }
-            if(eventCount > end) {
+            if (eventCount > end) {
                 break;
             }
         }
-        if(!flag) {
+        if (!flag) {
             stopTimeAnalysis = System.currentTimeMillis();
             System.out.println("Not matched");
         }
