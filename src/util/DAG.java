@@ -2,7 +2,6 @@ package util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Stack;
 
@@ -17,6 +16,10 @@ public class DAG<T> {
             this.id = id;
             this.data = data;
         }
+
+        public String toString() {
+            return "Node{id=" + id + ", data=" + data + "}";
+        }
     }
 
     private HashMap<Integer, Node> idToNodes = new HashMap<>();
@@ -26,7 +29,10 @@ public class DAG<T> {
     }
 
     public void addNode(int id, T data) {
-        idToNodes.put(id, new Node(id, data));
+        Node node = new Node(id, data);
+
+        idToNodes.put(id, node);
+        adjList.put(node, new ArrayList<>());
     }
 
     public void addEdge(Node u, Node v) {
@@ -34,7 +40,7 @@ public class DAG<T> {
             throw new IllegalArgumentException("The given nodes are not in the graph");
         }
 
-        adjList.getOrDefault(u, new ArrayList<>()).add(v);
+        adjList.get(u).add(v);
     }
 
     public void addEdge(int uId, int vId) {
