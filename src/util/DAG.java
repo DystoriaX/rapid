@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 // This only works when T is hashable
 public class DAG<T> {
@@ -53,17 +55,7 @@ public class DAG<T> {
 
     public List<Node> getTopologicalOrder() {
         // Kahn's Algorithm
-        HashMap<Node, Integer> inDegreeOf = new HashMap<>();
-
-        for (Node node : idToNodes.values()) {
-            inDegreeOf.put(node, 0);
-        }
-
-        for (ArrayList<Node> neighbours : adjList.values()) {
-            for (Node node : neighbours) {
-                inDegreeOf.compute(node, (k, v) -> v + 1);
-            }
-        }
+        HashMap<Node, Integer> inDegreeOf = getIndegree();
 
         ArrayList<Node> order = new ArrayList<>();
         Stack<Node> noIndegreeNodes = new Stack<>();
@@ -94,5 +86,57 @@ public class DAG<T> {
         }
 
         return order;
+    }
+
+    private HashMap<Node, Integer> getIndegree() {
+        HashMap<Node, Integer> inDegreeOf = new HashMap<>();
+
+        for (Node node : idToNodes.values()) {
+            inDegreeOf.put(node, 0);
+        }
+
+        for (ArrayList<Node> neighbours : adjList.values()) {
+            for (Node node : neighbours) {
+                inDegreeOf.compute(node, (k, v) -> v + 1);
+            }
+        }
+
+        return inDegreeOf;
+    }
+
+    public <U> DAG<U> map(Function<T, U> f) {
+        DAG<U> newG = new DAG<>();
+
+        for (Node node : idToNodes.values()) {
+            newG.addNode(node.id, f.apply(node.data));
+        }
+
+        for (Node node : idToNodes.values()) {
+            for (Node otherNode : adjList.get(node)) {
+                newG.addEdge(node.id, otherNode.id);
+            }
+        }
+
+        return newG;
+    }
+
+    public void dfs(Consumer<Node> preFunction, Consumer<Node> postFunction) {
+        HashMap<Node, Integer> inDegreeOf = getIndegree();
+
+        for (HashMap.Entry<Node, Integer> e : inDegreeOf.entrySet()) {
+            if (e.getValue() != 0) {
+                continue;
+            }
+
+            dfs(e.getKey(), preFunction, postFunction);
+        }
+    }
+
+    private void dfs(Node u, Consumer<Node> preFunction, Consumer<Node> postFunction) {
+        preFunction.accept(u);
+        for (Node v : adjList.get(u)) {
+            dfs(v, preFunction, postFunction);
+        }
+        postFunction.accept(u);
     }
 }
