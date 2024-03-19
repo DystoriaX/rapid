@@ -19,22 +19,26 @@ public class DAG<T> {
         }
     }
 
-    private HashSet<Node> nodes = new HashSet<>();
+    private HashMap<Integer, Node> idToNodes = new HashMap<>();
     private HashMap<Node, ArrayList<Node>> adjList = new HashMap<>();
 
     public DAG() {
     }
 
-    public void addNode(Node node) {
-        nodes.add(node);
+    public void addNode(int id, T data) {
+        idToNodes.put(id, new Node(id, data));
     }
 
     public void addEdge(Node u, Node v) {
-        if (!nodes.contains(u) || !nodes.contains(v)) {
+        if (!idToNodes.containsValue(u) || !idToNodes.containsValue(v)) {
             throw new IllegalArgumentException("The given nodes are not in the graph");
         }
 
         adjList.getOrDefault(u, new ArrayList<>()).add(v);
+    }
+
+    public void addEdge(int uId, int vId) {
+        addEdge(idToNodes.get(uId), idToNodes.get(vId));
     }
 
     public ArrayList<Node> getNeighbours(Node u) {
@@ -45,7 +49,7 @@ public class DAG<T> {
         // Kahn's Algorithm
         HashMap<Node, Integer> inDegreeOf = new HashMap<>();
 
-        for (Node node : nodes) {
+        for (Node node : idToNodes.values()) {
             inDegreeOf.put(node, 0);
         }
 
