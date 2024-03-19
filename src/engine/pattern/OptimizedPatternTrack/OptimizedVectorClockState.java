@@ -1,23 +1,25 @@
 package engine.pattern.OptimizedPatternTrack;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Stack;
+import java.util.function.Consumer;
 
 import engine.pattern.State;
 import event.Lock;
 import event.Thread;
 import event.Variable;
-import util.Trie;
+import util.DAG;
 import util.vectorclock.VectorClock;
 
 public class OptimizedVectorClockState extends State {
     private HashMap<Thread, Integer> threadToIndex = new HashMap<>();
     public HashMap<ArrayList<Integer>, ArrayList<VectorClock>> currentState = new HashMap<>();
 
-    // Maps from linecode to set of indices???
+    // Maps from locIds to set of indices???
     public HashMap<Integer, HashSet<Integer>> pattern = new HashMap<>();
 
     private int numThreads;
@@ -28,11 +30,10 @@ public class OptimizedVectorClockState extends State {
     private HashMap<Variable, VectorClock> writeClock = new HashMap<>();
     private HashMap<Lock, VectorClock> lockClock = new HashMap<>();
 
-    private Trie<Integer> patternTrie = new Trie<>();
     private HashSet<ArrayList<Integer>> partialCandidates = new HashSet<>();
     private HashMap<Integer, HashSet<ArrayList<Integer>>> prefixesEndsWith = new HashMap<>();
 
-    public OptimizedVectorClockState(HashSet<Thread> tSet, ArrayList<ArrayList<Integer>> patterns) {
+    public OptimizedVectorClockState(HashSet<Thread> tSet, DAG<Integer> patternG) {
         // Populate threads
         numThreads = tSet.size();
         Iterator<Thread> itThread = tSet.iterator();
@@ -44,90 +45,60 @@ public class OptimizedVectorClockState extends State {
             threadClock.put(thr, emptyClock());
         }
 
-        // Populate table of permutation to after sets (VC)
         currentState.put(new ArrayList<>(), new ArrayList<>());
 
-        // Maps each line of code in a pattern into an index
-        for (ArrayList<Integer> pattern : patterns) {
-            patternTrie.add(pattern);
+        Stack<ArrayList<ArrayList<Integer>>> candidateStack = new Stack<>();
+        candidateStack.push(new ArrayList<>(Collections.singleton(new ArrayList<>())));
 
-            // Assumption: all pattern has the same size
-            this.k = pattern.size();
-        }
+        Consumer<DAG<Integer>.Node> preSearch = (DAG<Integer>.Node u) -> {
+            System.out.println("DFS at " + u);
+            ArrayList<ArrayList<Integer>> newCandidates = new ArrayList<>();
 
-        for (ArrayList<Integer> pattern : patterns) {
-            ArrayList<Integer> ids = patternTrie.getIds(pattern);
-
-            for (int i = 0; i < pattern.size(); i++) {
-                int p = pattern.get(i);
-                if (!this.pattern.containsKey(p)) {
-                    this.pattern.put(p, new HashSet<>());
+            for (ArrayList<ArrayList<Integer>> candidateList : candidateStack) {
+                for (ArrayList<Integer> candidate : candidateList) {
+                    // Try insert the new id on the candidate
+                    for (int i = 0; i <= candidate.size(); i++) {
+                        ArrayList<Integer> newCandidate = new ArrayList<>(candidate);
+                        newCandidate.add(i, u.id);
+                        newCandidates.add(newCandidate);
+                    }
                 }
-
-                this.pattern.get(p).add(ids.get(i));
             }
 
-            generatePattern(ids);
-        }
-    }
+            candidateStack.push(newCandidates);
+            System.out.println("New: " + newCandidates);
 
-    private final void generatePattern(ArrayList<Integer> pattern) {
-        // Heap's algorithm
+            // Update partial candidates
+            partialCandidates.addAll(newCandidates);
 
-        int i = 0;
-        int length = pattern.size();
-        Integer[] c = new Integer[length];
-        Arrays.fill(c, 0);
+            // Update prefixesEndsWith
+            for (ArrayList<Integer> candidate : newCandidates) {
+                int lastElement = candidate.get(candidate.size() - 1);
+                ArrayList<Integer> prefix = new ArrayList<>(candidate.subList(0, candidate.size() - 1));
 
-        populatePartialCandidates(pattern);
-        while (i < length) {
-            if (c[i] < i) {
-                if (i % 2 == 0) {
-                    // Swap pattern[0] and pattern[i]
-                    int tmp = pattern.get(0);
-                    pattern.set(0, pattern.get(i));
-                    pattern.set(i, tmp);
-                } else {
-                    // Swap pattern[c[i]] and pattern[i]
-                    int tmp = pattern.get(c[i]);
-                    pattern.set(c[i], pattern.get(i));
-                    pattern.set(i, tmp);
-                }
-
-                // Add permutation
-                populatePartialCandidates(pattern);
-                c[i] = c[i] + 1;
-                i = 0;
-            } else {
-                c[i] = 0;
-                i = i + 1;
-            }
-        }
-        for (ArrayList<Integer> candidate : partialCandidates) {
-            System.out.println(candidate);
-        }
-    }
-
-    private final void populatePartialCandidates(ArrayList<Integer> pattern) {
-        // Get all the prefixes
-        ArrayList<Integer> prefix = new ArrayList<>();
-
-        System.out.println("Pattern: " + pattern);
-        for (int i = 0; i < pattern.size(); i++) {
-            int currentLabel = pattern.get(i);
-
-            if (!prefixesEndsWith.containsKey(currentLabel)) {
-                prefixesEndsWith.put(currentLabel, new HashSet<>());
+                prefixesEndsWith.putIfAbsent(lastElement, new HashSet<>());
+                prefixesEndsWith.get(lastElement).add(prefix);
             }
 
-            // Needs a copy
-            prefixesEndsWith.get(currentLabel).add(new ArrayList<>(prefix));
+            // Update mapping from locId to id for patterns
+            pattern.putIfAbsent(u.data, new HashSet<>());
+            pattern.get(u.data).add(u.id);
+        };
 
-            prefix.add(currentLabel);
+        Consumer<DAG<Integer>.Node> postSearch = (DAG<Integer>.Node u) -> {
+            System.out.println("Popped");
+            candidateStack.pop();
+        };
 
-            // Needs a copy
-            partialCandidates.add(new ArrayList<>(prefix));
+        patternG.dfs(preSearch, postSearch);
+
+        this.k = 0;
+
+        for (ArrayList<Integer> pc : partialCandidates) {
+            this.k = Math.max(this.k, pc.size());
         }
+
+        System.out.println(this.k);
     }
 
     public VectorClock emptyClock() {

@@ -192,15 +192,34 @@
             <classpath refid="rapid.classpath" />
         </java>
     </target>
+
+    <target name="vcrr" depends="build">
+        <java classname="VCPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/batik/TEST_test_trace.rr" />
+            <arg value="-m" />
+            <arg value="benchmark/batik/pattern/pattern0" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+
     <target name="ovc" depends="build">
         <java classname="OptimizedVCPatternProperties" fork="true">
             <arg value="-f" />
             <arg value="std" />
             <arg value="-p" />
-            <arg value="benchmark/custom/trace.std" />
+            <arg value="benchmark/hedc/trace.std" />
             <arg value="-m" />
-            <arg value="benchmark/custom/pattern" />
+            <arg value="benchmark/hedc/patternGraph" />
             <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+
+    <target name="dagparser" depends="build">
+        <java classname="DAGParserTest" fork="true">
+            <arg value="benchmark/batik/pattern/dagpattern" />
         </java>
     </target>
 </project>

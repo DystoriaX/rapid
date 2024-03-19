@@ -1,21 +1,15 @@
 package engine.pattern.OptimizedPatternTrack;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import engine.Engine;
 import engine.pattern.State;
+import engine.pattern.OptimizedPatternTrack.parser.DAGParser;
 import event.Thread;
 import parse.ParserType;
 import parse.rr.ParseRoadRunner;
 import parse.std.ParseStandard;
+import util.DAG;
 
 public class OptimizedPatternEngine<S extends State, E extends OptimizedPatternEvent<S>> extends Engine<E> {
     protected long eventCount;
@@ -26,7 +20,7 @@ public class OptimizedPatternEngine<S extends State, E extends OptimizedPatternE
     protected HashMap<String, Integer> locationToIdMap = null;
     protected S state;
 
-    protected ArrayList<ArrayList<Integer>> patterns = new ArrayList<>();
+    protected DAG<Integer> patternsGraph;
 
     public boolean partition = false;
     protected long startTimeAnalysis = 0;
@@ -36,29 +30,24 @@ public class OptimizedPatternEngine<S extends State, E extends OptimizedPatternE
     public OptimizedPatternEngine(ParserType pType, String trace_folder, String patternFileName) {
         super(pType);
 
-        try {
-            Scanner myReader = new Scanner(new File(patternFileName));
+        this.initializeReader(trace_folder);
 
-            this.initializeReader(trace_folder);
-            while (myReader.hasNextLine()) {
-                String line = myReader.nextLine();
-                List<Integer> pattern = Stream.of(line.split(",")).map(Integer::valueOf).collect(Collectors.toList());
-
-                patterns.add(new ArrayList<>(pattern));
+        DAGParser parser = new DAGParser(patternFileName);
+        patternsGraph = parser.parse().map((loc) -> {
+            if (pType.isRR()) {
+                return locationToIdMap.get(loc);
+            } else {
+                return Integer.valueOf(loc);
             }
+        });
 
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }
         eventCount = 0;
         totalSkippedEvents = 0;
     }
 
     protected boolean analyzeEvent(E handlerEvent, Long eventCount) {
         boolean patternMatched = false;
-        System.out.println(handlerEvent.getLocId());
+
         try {
             patternMatched = handlerEvent.Handle(state);
         } catch (OutOfMemoryError oome) {
