@@ -1,9 +1,8 @@
 package engine.pattern.OptimizedPatternTrack;
 
-import engine.pattern.PatternEvent;
 import util.vectorclock.VectorClock;
 
-public class OptimizedVectorClockEvent extends PatternEvent<OptimizedVectorClockState> {
+public class OptimizedVectorClockEvent extends OptimizedPatternEvent<OptimizedVectorClockState> {
     @Override
     public boolean Handle(OptimizedVectorClockState state) {
         super.Handle(state);
