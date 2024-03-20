@@ -161,6 +161,7 @@ public abstract class RaceDetectionEngine<St extends State, RDE extends RaceDete
 						break;
 					}
 				}
+				System.out.println(eventCount + " " + raceCount);
 				postHandleEvent(handlerEvent);
 			}
 		}

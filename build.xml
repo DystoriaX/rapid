@@ -29,6 +29,7 @@
         <pathelement location="lib/jgrapht/jgraphx-3.4.1.3.jar"/>
         <pathelement location="lib/jgrapht/jheaps-0.9.jar"/>
         <pathelement location="lib/commons-cli-1.3.1.jar"/>
+        <pathelement location="lib/javatuples-1.3-SNAPSHOT.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -77,4 +78,148 @@
 		</manifest>
 	  </jar>
 	</target>
+    <target name="runS" depends="build">
+        <java classname="SummarizedGraph" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="runV" depends="build">
+        <java classname="Velodrome" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="runA" depends="build">
+        <java classname="Aerodrome" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="parseRR" depends="build">
+        <java classname="parse/rr/ParseRoadRunner" fork="true">
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="parse" depends="build">
+        <java classname="parse/rr/Parse" fork="true">
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="pattern" depends="build">
+        <java classname="Prefix" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/bug-bench/jfreechart/test.rr" />
+            <arg value="-m" />
+            <arg value="benchmark/bug-bench/jfreechart/pattern" />
+            <arg value="-prob" />
+            <arg value="0.01" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="race" depends="build">
+        <java classname="RacePrefix" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/STD-Format/sunflow.std" />
+            <arg value="-prob" />
+            <arg value="300" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="race1" depends="build">
+        <java classname="SyncPreserving" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/STD-Format/bufwriter.std" />
+            <arg value="-prob" />
+            <arg value="100000000" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="concurtest" depends="build">
+        <java classname="BertoniPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/TEST_net_objecthunter_exp4j_ConcurrentTest.rr" />
+            <arg value="-m" />
+            <arg value="benchmark/exp4j/TEST_net_objecthunter_exp4j_ConcurrentTest/pattern/pattern0" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="metainfo" depends="build">
+        <java classname="MetaPatternInfo" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <arg value="-m" />
+            <arg value="benchmark/hedc/pattern" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="generatePattern" depends="build">
+        <java classname="PatternGeneration" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/zookeeper/TEST_test/trace.rr" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+    <target name="vc" depends="build">
+        <java classname="VCPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <arg value="-m" />
+            <arg value="benchmark/hedc/pattern" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+
+    <target name="vcrr" depends="build">
+        <java classname="VCPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="rr" />
+            <arg value="-p" />
+            <arg value="benchmark/batik/TEST_test_trace.rr" />
+            <arg value="-m" />
+            <arg value="benchmark/batik/pattern/pattern0" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+
+    <target name="ovc" depends="build">
+        <java classname="OptimizedVCPatternProperties" fork="true">
+            <arg value="-f" />
+            <arg value="std" />
+            <arg value="-p" />
+            <arg value="benchmark/hedc/trace.std" />
+            <arg value="-m" />
+            <arg value="benchmark/hedc/patternGraph" />
+            <classpath refid="rapid.classpath" />
+        </java>
+    </target>
+
+    <target name="dagparser" depends="build">
+        <java classname="DAGParserTest" fork="true">
+            <arg value="benchmark/batik/pattern/dagpattern" />
+        </java>
+    </target>
 </project>

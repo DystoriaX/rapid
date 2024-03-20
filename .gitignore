@@ -1,0 +1,5 @@
+**/.DS_STORE
+**/*.jar
+bin/**
+benchmark/**
+Benchmarks/**

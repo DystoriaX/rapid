@@ -1,8 +1,11 @@
 package event;
 
+import java.util.HashSet;
+
 public class Variable extends Decoration {
 
 	public static int variableCountTracker = 0;
+	public HashSet<Thread> touchedThreads = new HashSet<>();
 
 	public Variable() {
 		this.id = variableCountTracker;

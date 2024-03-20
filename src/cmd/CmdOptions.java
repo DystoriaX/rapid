@@ -10,6 +10,7 @@ public class CmdOptions {
 	public String path;
 	public int verbosity;
 	public String excludeList;
+	public double prob;
 
 	public CmdOptions() {
 		this.parserType = ParserType.CSV;
@@ -18,6 +19,7 @@ public class CmdOptions {
 		this.path = null;
 		this.verbosity = 0;
 		this.excludeList = null;
+		this.prob = 1;
 	}
 	
 	public String toString(){
