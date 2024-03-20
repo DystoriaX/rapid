@@ -51,7 +51,6 @@ public class OptimizedVectorClockState extends State {
         candidateStack.push(new ArrayList<>(Collections.singleton(new ArrayList<>())));
 
         Consumer<DAG<Integer>.Node> preSearch = (DAG<Integer>.Node u) -> {
-            System.out.println("DFS at " + u);
             ArrayList<ArrayList<Integer>> newCandidates = new ArrayList<>();
 
             for (ArrayList<ArrayList<Integer>> candidateList : candidateStack) {
@@ -66,7 +65,6 @@ public class OptimizedVectorClockState extends State {
             }
 
             candidateStack.push(newCandidates);
-            System.out.println("New: " + newCandidates);
 
             // Update partial candidates
             partialCandidates.addAll(newCandidates);
@@ -86,7 +84,6 @@ public class OptimizedVectorClockState extends State {
         };
 
         Consumer<DAG<Integer>.Node> postSearch = (DAG<Integer>.Node u) -> {
-            System.out.println("Popped");
             candidateStack.pop();
         };
 
@@ -97,8 +94,6 @@ public class OptimizedVectorClockState extends State {
         for (ArrayList<Integer> pc : partialCandidates) {
             this.k = Math.max(this.k, pc.size());
         }
-
-        System.out.println(this.k);
     }
 
     public VectorClock emptyClock() {
