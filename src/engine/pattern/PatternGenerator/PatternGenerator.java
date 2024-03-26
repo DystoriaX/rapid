@@ -152,7 +152,7 @@ public abstract class PatternGenerator {
 
         for (int i = 0; i < number; i++) {
             System.out.println("start " + i);
-            this.k = i >= (int) (number / 2) ? 11 : 16;
+            this.k = i >= (int) (number / 2) ? 101 : 106;
             resetParser();
             ArrayList<String> pattern = new ArrayList<>();
             pattern.add(((Long) starts.get(i)).toString());
