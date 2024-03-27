@@ -18,19 +18,14 @@ public class VectorClockEngine extends PatternEngine<VectorClockState, VectorClo
         long stopTimeAnalysis = 0;
         while (rrParser.checkAndGetNext(handlerEvent)) {
             eventCount = eventCount + 1;
-            if (eventCount >= start && eventCount <= end) {
-                boolean matched = analyzeEvent(handlerEvent, eventCount);
-                if (matched) {
-                    stopTimeAnalysis = System.currentTimeMillis();
-                    flag = true;
-                    System.out.println("Pattern Matched on the first " + eventCount + " events");
-                    break;
-                }
-                postHandleEvent(handlerEvent);
-            }
-            if (eventCount > end) {
+            boolean matched = analyzeEvent(handlerEvent, eventCount);
+            if (matched) {
+                stopTimeAnalysis = System.currentTimeMillis();
+                flag = true;
+                System.out.println("Pattern Matched on the first " + eventCount + " events");
                 break;
             }
+            postHandleEvent(handlerEvent);
         }
         if (!flag) {
             stopTimeAnalysis = System.currentTimeMillis();

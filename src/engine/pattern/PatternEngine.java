@@ -41,7 +41,9 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
             this.initializeReader(trace_folder);
             while (myReader.hasNextLine()) {
                 String line = myReader.nextLine();
-                List<Integer> pattern = Stream.of(line.split(",")).map(Integer::valueOf).collect(Collectors.toList());
+                List<Integer> pattern = Stream.of(line.split(" "))
+                        .map(this.locationToIdMap::get)
+                        .collect(Collectors.toList());
 
                 patterns.add(new ArrayList<>(pattern));
             }
@@ -57,7 +59,6 @@ public class PatternEngine<S extends State, E extends PatternEvent<S>> extends E
 
     protected boolean analyzeEvent(E handlerEvent, Long eventCount) {
         boolean patternMatched = false;
-        System.out.println(handlerEvent.getLocId());
         try {
             patternMatched = handlerEvent.Handle(state);
         } catch (OutOfMemoryError oome) {

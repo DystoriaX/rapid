@@ -2,7 +2,7 @@
 
 if [ -z $1 ]
 then
-    echo "Usage: $0 [BENCHMARK_NAME]"
+    echo "Usage: $0 [BENCHMARK_NAME] [WIDTH]? [NUM_DIAMONDS]?"
     exit 1
 fi
 
@@ -26,8 +26,8 @@ cpfile="$(pwd)/bin:$(pwd)/lib/*"
 
 echo "Generating patterns..."
 
-java -cp "$cpfile" PatternGeneration -f $format -p $tracePath
+# java -cp "$cpfile" PatternGeneration -f $format -p $tracePath
 
 echo "Constructing DAG and Trie..."
 
-python3 scripts/dag.py $testDir/pattern_pre
+python3 scripts/dag.py $testDir/pattern_pre $2 $3

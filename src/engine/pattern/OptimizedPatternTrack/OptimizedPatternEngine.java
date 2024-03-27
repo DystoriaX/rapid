@@ -79,7 +79,7 @@ public class OptimizedPatternEngine<S extends State, E extends OptimizedPatternE
             if (matched) {
                 stopTimeAnalysis = System.currentTimeMillis();
                 flag = true;
-                System.out.println("Pattern Matched on the first " + eventCount + " events");
+                System.out.println("All pattern matched on the first " + eventCount + " events");
                 break;
             }
             postHandleEvent(handlerEvent);

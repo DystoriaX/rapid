@@ -33,6 +33,8 @@ public class OptimizedVectorClockState extends State {
     private HashSet<ArrayList<Integer>> partialCandidates = new HashSet<>();
     private HashMap<Integer, HashSet<ArrayList<Integer>>> prefixesEndsWith = new HashMap<>();
 
+    private HashSet<ArrayList<Integer>> bugs = new HashSet<>();
+
     public OptimizedVectorClockState(HashSet<Thread> tSet, DAG<Integer> patternG) {
         // Populate threads
         numThreads = tSet.size();
@@ -94,6 +96,15 @@ public class OptimizedVectorClockState extends State {
         for (ArrayList<Integer> pc : partialCandidates) {
             this.k = Math.max(this.k, pc.size());
         }
+
+        for (ArrayList<Integer> pc : partialCandidates) {
+            if (pc.size() != this.k) {
+                continue;
+            }
+
+            ArrayList<Integer> npc = new ArrayList<>(pc);
+            bugs.add(npc);
+        }
     }
 
     public VectorClock emptyClock() {
@@ -141,7 +152,14 @@ public class OptimizedVectorClockState extends State {
                 for (ArrayList<Integer> witness : prefixesEndsWith.get(index)) {
                     if (currentState.containsKey(witness) && witnesses(index, vc, witness, currentState.get(witness))) {
                         if (witness.size() == k - 1) {
-                            return true;
+                            ArrayList<Integer> bugFound = new ArrayList<>(witness);
+                            bugFound.add(index);
+                            bugs.remove(bugFound);
+
+                            // Found all bugs
+                            if (bugs.isEmpty()) {
+                                return true;
+                            }
                         }
 
                         // Add the new event as part of the permutation
