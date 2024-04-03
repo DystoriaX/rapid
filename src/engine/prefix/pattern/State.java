@@ -12,13 +12,17 @@ import event.Thread;
 import event.Variable;
 
 public class State {
-    public ArrayList<Pair<VectorClockState, DependentInfo>> states = new ArrayList<>(); 
+    public ArrayList<Pair<VectorClockState, DependentInfo>> states = new ArrayList<>();
     HashSet<Thread> tSet;
     ArrayList<Integer> pattern;
     double prob;
 
     public State(HashSet<Thread> tSet, ArrayList<Integer> pattern, double prob) {
-        states.add(new Pair<VectorClockState, DependentInfo>(new VectorClockState(tSet, pattern), new DependentInfo()));
+        ArrayList<ArrayList<Integer>> patterns = new ArrayList<>();
+        patterns.add(pattern);
+
+        states.add(
+                new Pair<VectorClockState, DependentInfo>(new VectorClockState(tSet, patterns), new DependentInfo()));
         this.tSet = tSet;
         this.pattern = pattern;
         this.prob = prob;

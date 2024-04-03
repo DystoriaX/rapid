@@ -30,6 +30,8 @@ do
     echo "Running pattern $(basename $patternFile)"
 
     java -cp "$cpfile" OptimizedVCPatternProperties -f $format -p $tracePath -m $patternFile
+
+    echo ""
 done
 
 
@@ -40,5 +42,16 @@ do
     echo "Running pattern $(basename $patternFile)"
 
     java -cp "$cpfile" OptimizedVCPatternProperties -f $format -p $tracePath -m $patternFile
+
+    echo ""
+done
+
+for patternFile in $(find $testDir -name 'normal_pattern*' | sort)
+do
+    echo "Running pattern $(basename $patternFile)"
+
+    java -cp "$cpfile" VCPatternProperties -f $format -p $tracePath -m $patternFile
+
+    echo ""
 done
 

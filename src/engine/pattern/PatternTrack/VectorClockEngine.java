@@ -8,7 +8,7 @@ public class VectorClockEngine extends PatternEngine<VectorClockState, VectorClo
     public VectorClockEngine(ParserType pType, String trace_folder, String patternFile) {
         super(pType, trace_folder, patternFile);
         handlerEvent = new VectorClockEvent();
-        state = new VectorClockState(threadSet, patterns.get(0));
+        state = new VectorClockState(threadSet, patterns);
     }
 
     @Override

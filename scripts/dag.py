@@ -10,7 +10,7 @@ Graph = Tuple[List[Node], List[Edge]]
 Path = List[Node]
 
 WIDTH = 3
-DIAMONDS = 4
+DIAMONDS = 3
 
 # Utility functions for graph
 
